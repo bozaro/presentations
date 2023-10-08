@@ -1,5 +1,7 @@
 /.idea
 /.build
+/.jenkins
 /public
-/.hugo_build.lock
 .DS_Store
+.hugo_build.lock
+__pycache__

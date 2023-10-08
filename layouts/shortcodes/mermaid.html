@@ -1,0 +1,4 @@
+{{- $name := .Get "file" }}
+{{- $file := printf "static/%s" $name | readFile }}
+<pre class="mermaid">{{ safeHTML $file }}</pre>
+{{- .Page.Store.Set "hasMermaid" true -}}

@@ -1,0 +1,9 @@
+{{- $name := .Get "file" }}
+{{- $file := printf "static/%s" $name | readFile }}
+{{- $lang := .Get "language" }}
+<figure>
+    {{- with .Get "label" }}
+    <figcaption><a href="/{{ $name }}">{{ . }}</a>:</figcaption>
+    {{- end }}
+    {{- highlight $file $lang }}
+</figure>
