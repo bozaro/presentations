@@ -2,7 +2,7 @@ pipeline {
     agent {
         dockerfile {
             dir '.jenkins'
-            filename 'Dockerfile.build'
+            filename 'Dockerfile'
         }
     }
 
@@ -55,19 +55,8 @@ zip ../gh-pages.zip -r -q .
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github_bozaro_user', passwordVariable: 'GITHUB_TOKEN', usernameVariable: 'GITHUB_LOGIN')]) {
                     sh """
-git push -qf https://\${GITHUB_LOGIN}:\${GITHUB_TOKEN}@github.com/bozaro/tech-db-lectures.git gh-pages
+git push -qf https://\${GITHUB_LOGIN}:\${GITHUB_TOKEN}@github.com/bozaro/presentations.git gh-pages
 """
-                }
-            }
-        }
-
-        stage ('Publish (branch)') {
-            when {
-                expression { BRANCH_NAME ==~ /(master|20\d\d-[12])/ }
-            }
-            steps {
-                sshagent(credentials: ['web-deploy']) {
-                    sh 'rsync -e "ssh -o StrictHostKeyChecking=no" -rlvzc --no-owner --no-group --delete-after public/ deploy@ivy.bozaro.ru:tech-db-lectures/$BRANCH_NAME/'
                 }
             }
         }

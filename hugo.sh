@@ -1,31 +1,20 @@
-#!/bin/bash -ex
+#!/bin/sh -ex
 cd `dirname $0`
-HUGO_VER=0.119.0
-OS=`uname`
-case "${OS}" in
-	Linux)
-		HUGO_DIST="hugo_${HUGO_VER}_Linux-64bit.tar.gz"
-		;;
-	Darwin)
-		HUGO_DIST="hugo_${HUGO_VER}_macOS-64bit.tar.gz"
-		;;
-	*)
-		echo "Unknown OS: ${OS}"
-		exit 1
-		;;
-esac
-
-HUGO_DIR=".build/${OS}_${HUGO_VER}"
-HUGO="${HUGO_DIR}/hugo"
-if [ ! -f "${HUGO}" ]; then
-	mkdir -p "${HUGO_DIR}"
-	mkdir -p ".jenkins"
-	if [ ! -f ".jenkins/${HUGO_DIST}" ]; then
-		wget -v -c -O ".jenkins/${HUGO_DIST}~" "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VER}/${HUGO_DIST}"
-		mv ".jenkins/${HUGO_DIST}~" ".jenkins/${HUGO_DIST}"
-	fi
-	tar -xzvf ".jenkins/${HUGO_DIST}" -C "${HUGO_DIR}/"
+set +e
+HUGO=""
+set -e
+if [ "${HUGO}" = "" ]; then
+  HUGO_VER=0.119.0
+  if [ ! -f .build/hugo_${HUGO_VER}_linux_amd64/hugo_${HUGO_VER}_linux_amd64 ]; then
+    mkdir -p .jenkins/distrib
+    HUGO_TGZ=.jenkins/distrib/hugo_${HUGO_VER}_Linux-64bit.tar.gz
+    if [ ! -f $HUGO_TGZ ]; then
+      curl -fL -o ${HUGO_TGZ}~ https://github.com/gohugoio/hugo/releases/download/v${HUGO_VER}/hugo_${HUGO_VER}_Linux-64bit.tar.gz
+      mv ${HUGO_TGZ}~ ${HUGO_TGZ}
+    fi
+    mkdir -p .build/hugo_${HUGO_VER}_linux_amd64
+    tar -xzvf ${HUGO_TGZ}  -C .build/hugo_${HUGO_VER}_linux_amd64
+  fi
+  HUGO=".build/hugo_${HUGO_VER}_linux_amd64/hugo"
 fi
-
-"${HUGO}" $@
-find public/ -iname ".*" -exec rm {} \;
+${HUGO} $@
