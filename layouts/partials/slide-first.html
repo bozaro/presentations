@@ -1,0 +1,5 @@
+{{ $BaseURL := replaceRE "((?:/)([^/]+)$|^/)" "" ( replaceRE "/([^/]+)" "/.." .RelPermalink ) }}
+<section class="slide clear" style="padding: 0" id="cover">
+    <h2 class="shout">{{ .Title }}</h2>
+    <div class="place bottom right" style="padding: 50px">{{ .Site.Params.author }}</div>
+</section>

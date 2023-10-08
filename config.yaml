@@ -1,0 +1,28 @@
+baseUrl: "/"
+languageCode: "ru"
+title: "Публичные презентации"
+
+relativeURLs: true
+disableKinds:
+- 404
+- RSS
+metadataFormat: "yaml"
+
+blackfriday:
+  sourceRelativeLinksEval: true
+
+params:
+  author: "Навроцкий Артем"
+  github: https://github.com/bozaro/presentations
+  email: bozaro@yandex.ru
+  description: "Публичные презентации"
+  highlightTheme: "xcode"
+  useMath: false
+  favicon: "favicon.png"
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  highlight:
+    style: xcode
