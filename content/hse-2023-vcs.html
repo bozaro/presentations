@@ -698,13 +698,56 @@ gitGraph
 
 <section class="slide">
     <h2>Кодировка и имена файлов</h2>
+    <p>Статья про нормализацию Unicode: <a href="https://habr.com/ru/articles/45489/">habr.com/ru/articles/45489</a></p>
     <dl>
-        <dt>NFC</dt>
+        <dt>Normalization Form C (NFC)</dt>
         <dd>По-умолчанию используется в Windows и Linux</dd>
-        <dt>NFD</dt>
+        <dt>Normalization Form D (NFD)</dt>
         <dd>По-умолчанию используется в OSX</dd>
     </dl>
-    <img src="nfc-vs-nfd.jpg" style="padding-top: 40px"/>
+    <table class="striped compact">
+        <tr>
+            <th>Source</th>
+            <th>Normalization Form D (NFD)</th>
+            <th>Normalization Form C (NFC)</th>
+        </tr>
+        <tr style="font-size: 25pt; font-family: serif">
+            <td>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x00C5;<div style="font-size: 30%; font-family: monospace">00C5</div></div>
+            </td>
+            <td>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x0041;<div style="font-size: 30%; font-family: monospace">0041</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell"><div style="width: 1em; position: absolute">&#x25CC;</div>&#x02DA;<div style="font-size: 30%; font-family: monospace">030A</div></div>
+            </td>
+            <td>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x00C5;<div style="font-size: 30%; font-family: monospace">00C5</div></div>
+            </td>
+        </tr>
+        <tr style="font-size: 25pt; font-family: serif">
+            <td>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x00F4;<div style="font-size: 30%; font-family: monospace">00F4</div></div>
+            </td>
+            <td>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x006F;<div style="font-size: 30%; font-family: monospace">006F</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell"><div style="width: 1em; position: absolute">&#x25CC;</div>&#x02C6;<div style="font-size: 30%; font-family: monospace">0302</div></div>
+            </td>
+            <td>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x00F4;<div style="font-size: 30%; font-family: monospace">00F4</div></div>
+            </td>
+        </tr>
+        <tr style="font-size: 25pt; font-family: serif">
+            <td>
+                <div style="display: table-cell">&#x0439;<div style="font-size: 30%; font-family: monospace">0439</div></div>
+            </td>
+            <td>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x0438;<div style="font-size: 30%; font-family: monospace">0438</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell"><div style="width: 1em; position: absolute">&#x25CC;</div>&#x02D8;<div style="font-size: 30%; font-family: monospace">0306</div></div>
+            </td>
+            <td>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x0439;<div style="font-size: 30%; font-family: monospace">0439</div></div>
+            </td>
+        </tr>
+    </table>
 </section>
 
 <section class="slide">
