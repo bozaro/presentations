@@ -589,6 +589,20 @@ gitGraph
 </section>
 
 <section class="slide">
+    <h2>Git autosquash</h2>
+    <h3>Пример использования</h3>
+    <pre><code class="bash">$ git add .
+$ git commit --fixup HEAD
+$ git log -n2 --oneline
+6f3bc46 (HEAD -> foo) fixup! Commit 1
+3a78335 Commit 1
+$ git rebase -i HEAD^^ --autosquash
+</code></pre>
+    <h3>Включение на постоянной основе</h3>
+    <pre><code class="bash">git config --global rebase.autosquash true</code></pre>
+</section>
+
+<section class="slide">
     <h2>Чистка</h2>
     <h3>git clean</h3>
     <p>Удаляет файлы, про которые не знает Git.</p>
@@ -659,6 +673,7 @@ gitGraph
 
 <section class="slide">
     <h2>Ааа!!! Я запутался!!!</h2>
+    <img src="this-is-fine.png" style="width: 300px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
     <span class="next">
         <h3>git reflog</h3>
         <p>Git reflog показывает последние коммиты, на которых была голова рабочей копии.</p>
@@ -761,10 +776,15 @@ gitGraph
 
 <section class="slide">
     <h2><a href="https://subgit.com/">SubGit</a></h2>
+    <img src="subgit.png" style="width: 600px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
+    <p>Официальный сайт: <a href="https://subgit.com/">subgit.com</a></p>
     <p>Сервис, который держит в синхронизированном состоянии как Subversion, так и Git вариант репозитория.</p>
 </section>
 
 <section class="slide">
     <h2><a href="https://github.com/git-as-svn/git-as-svn">git-as-svn</a></h2>
+    <img src="git-as-svn.jpg" style="width: 200px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
+    <p>Статья на Хабр: <a href="https://habr.com/ru/companies/vk/articles/241095/">habr.com/ru/companies/vk/articles/241095</a></p>
     <p>Сервис, реализующий Subversion-сервис поверх существующего Git-репозитория.</p>
+    <p>В отличие от SubGit, не использует для работы отдельную копию Subversion-репозитория. Все данные только в Git.</p>
 </section>
