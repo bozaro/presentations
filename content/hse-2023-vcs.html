@@ -496,6 +496,17 @@ git merge feature-123</code></pre>
 </section>
 
 <section class="slide">
+    <h2>Правила хорошего тона</h2>
+    <ul>
+        <li>Добавлять ID задачи</li>
+        <li>Писать заголовки до 50 символов, а в теле ограничивать длину строки 72 символами</li>
+        <li>Делать отступ между заголовком и описанием</li>
+        <li>В теле описания должны быть ответы на вопросы: «Что?» и «Почему?»</li>
+        <li>Каждый коммит должен быть самодостаточен</li>
+    </ul>
+</section>
+
+<section class="slide">
     <h2>Переписывание истории</h2>
     <h3>git rebase</h3>
     <pre class="mermaid">
@@ -728,38 +739,75 @@ gitGraph
         </tr>
         <tr style="font-size: 25pt; font-family: serif">
             <td>
-                <div style="width: 1em; text-align: center; display: table-cell">&#x00C5;<div style="font-size: 30%; font-family: monospace">00C5</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x00C5;<div
+                        style="font-size: 30%; font-family: monospace">00C5
+                </div>
+                </div>
             </td>
             <td>
-                <div style="width: 1em; text-align: center; display: table-cell">&#x0041;<div style="font-size: 30%; font-family: monospace">0041</div></div>
-                <div style="width: 1em; text-align: center; display: table-cell"><div style="width: 1em; position: absolute">&#x25CC;</div>&#x02DA;<div style="font-size: 30%; font-family: monospace">030A</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x0041;<div
+                        style="font-size: 30%; font-family: monospace">0041
+                </div>
+                </div>
+                <div style="width: 1em; text-align: center; display: table-cell">
+                    <div style="width: 1em; position: absolute">&#x25CC;</div>&#x02DA;<div
+                        style="font-size: 30%; font-family: monospace">030A
+                </div>
+                </div>
             </td>
             <td>
-                <div style="width: 1em; text-align: center; display: table-cell">&#x00C5;<div style="font-size: 30%; font-family: monospace">00C5</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x00C5;<div
+                        style="font-size: 30%; font-family: monospace">00C5
+                </div>
+                </div>
             </td>
         </tr>
         <tr style="font-size: 25pt; font-family: serif">
             <td>
-                <div style="width: 1em; text-align: center; display: table-cell">&#x00F4;<div style="font-size: 30%; font-family: monospace">00F4</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x00F4;<div
+                        style="font-size: 30%; font-family: monospace">00F4
+                </div>
+                </div>
             </td>
             <td>
-                <div style="width: 1em; text-align: center; display: table-cell">&#x006F;<div style="font-size: 30%; font-family: monospace">006F</div></div>
-                <div style="width: 1em; text-align: center; display: table-cell"><div style="width: 1em; position: absolute">&#x25CC;</div>&#x02C6;<div style="font-size: 30%; font-family: monospace">0302</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x006F;<div
+                        style="font-size: 30%; font-family: monospace">006F
+                </div>
+                </div>
+                <div style="width: 1em; text-align: center; display: table-cell">
+                    <div style="width: 1em; position: absolute">&#x25CC;</div>&#x02C6;<div
+                        style="font-size: 30%; font-family: monospace">0302
+                </div>
+                </div>
             </td>
             <td>
-                <div style="width: 1em; text-align: center; display: table-cell">&#x00F4;<div style="font-size: 30%; font-family: monospace">00F4</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x00F4;<div
+                        style="font-size: 30%; font-family: monospace">00F4
+                </div>
+                </div>
             </td>
         </tr>
         <tr style="font-size: 25pt; font-family: serif">
             <td>
-                <div style="display: table-cell">&#x0439;<div style="font-size: 30%; font-family: monospace">0439</div></div>
+                <div style="display: table-cell">&#x0439;<div style="font-size: 30%; font-family: monospace">0439</div>
+                </div>
             </td>
             <td>
-                <div style="width: 1em; text-align: center; display: table-cell">&#x0438;<div style="font-size: 30%; font-family: monospace">0438</div></div>
-                <div style="width: 1em; text-align: center; display: table-cell"><div style="width: 1em; position: absolute">&#x25CC;</div>&#x02D8;<div style="font-size: 30%; font-family: monospace">0306</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x0438;<div
+                        style="font-size: 30%; font-family: monospace">0438
+                </div>
+                </div>
+                <div style="width: 1em; text-align: center; display: table-cell">
+                    <div style="width: 1em; position: absolute">&#x25CC;</div>&#x02D8;<div
+                        style="font-size: 30%; font-family: monospace">0306
+                </div>
+                </div>
             </td>
             <td>
-                <div style="width: 1em; text-align: center; display: table-cell">&#x0439;<div style="font-size: 30%; font-family: monospace">0439</div></div>
+                <div style="width: 1em; text-align: center; display: table-cell">&#x0439;<div
+                        style="font-size: 30%; font-family: monospace">0439
+                </div>
+                </div>
             </td>
         </tr>
     </table>
@@ -784,7 +832,9 @@ gitGraph
 <section class="slide">
     <h2><a href="https://github.com/git-as-svn/git-as-svn">git-as-svn</a></h2>
     <img src="git-as-svn.jpg" style="width: 200px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
-    <p>Статья на Хабр: <a href="https://habr.com/ru/companies/vk/articles/241095/">habr.com/ru/companies/vk/articles/241095</a></p>
+    <p>Статья на Хабр: <a href="https://habr.com/ru/companies/vk/articles/241095/">habr.com/ru/companies/vk/articles/241095</a>
+    </p>
     <p>Сервис, реализующий Subversion-сервис поверх существующего Git-репозитория.</p>
-    <p>В отличие от SubGit, не использует для работы отдельную копию Subversion-репозитория. Все данные только в Git.</p>
+    <p>В отличие от SubGit, не использует для работы отдельную копию Subversion-репозитория. Все данные только в
+        Git.</p>
 </section>
