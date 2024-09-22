@@ -1,5 +1,5 @@
 ---
-title: Кратко про системы контроля версий (2023)
+title: Кратко про системы контроля версий (2024)
 description: |
 Содержание:
 ---
@@ -59,13 +59,19 @@ description: |
 
 <section class="slide">
     <h2>Системы контроля версий</h2>
-    <ul>
-        <li>CVS, 1990 год (Client-Server, Merge)</li>
+    <h3>Snapshot-based</h3>
+    <ul class="compact">
+        <li><a href="https://www.nongnu.org/cvs/">CVS</a>, 1990 год (Client-Server, Merge)</li>
         <li>Visual SourceSafe, 1995 год (Shared Folder, Merge or lock)</li>
-        <li>Perforce, 1995 год (Client-Server and Distributed, Merge or lock)</li>
-        <li>Subversion, 2000 год (Client–server, Merge or lock)</li>
-        <li>Mercurial, 2005 год (Distributed, Merge)</li>
-        <li>Git, 2005 год (Distributed, Merge)</li>
+        <li><a href="https://www.perforce.com/products/helix-core">Perforce</a>, 1995 год (Client-Server and Distributed, Merge or lock)</li>
+        <li><a href="https://subversion.apache.org/">Subversion</a>, 2000 год (Client–server, Merge or lock)</li>
+        <li><a href="https://www.mercurial-scm.org/">Mercurial</a>, 2005 год (Distributed, Merge)</li>
+        <li><a href="https://git-scm.com/">Git</a>, 2005 год (Distributed, Merge)</li>
+    </ul>
+    <h3>Patch-based</h3>
+    <ul class="compact">
+        <li><a href="https://darcs.net/">Darcs</a>, 2003 год (Haskel)</li>
+        <li><a href="https://pijul.org/">Pijul</a>, 2016 год (Rust)</li>
     </ul>
     <img src="programmer-2001-02.jpg" style="width: 200px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
 </section>
@@ -77,7 +83,7 @@ description: |
 <section class="slide">
     <h2>Файл правит только один</h2>
     <div style="width: 80%">
-        {{< mermaid file="hse-2024-vcs/vcs-lock.mermaid" >}}
+        {{< mermaid file="hse-2023-vcs/vcs-lock.mermaid" >}}
     </div>
     <img src="p4.png" style="width: 250px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
 </section>
@@ -103,7 +109,7 @@ description: |
 <section class="slide">
     <h2>Конфликты решаются потом</h2>
     <div style="width: 50%">
-        {{< mermaid file="hse-2024-vcs/vcs-merge.mermaid" >}}
+        {{< mermaid file="hse-2023-vcs/vcs-merge.mermaid" >}}
     </div>
     <img src="subversion.png" style="width: 200px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
 </section>
@@ -191,7 +197,7 @@ description: |
 <section class="slide">
     <h2>Минимальный репозиторий</h2>
     <span style="font-size: 75%">
-{{< code file="hse-2024-vcs/repo/repo.py" language="python">}}
+{{< code file="hse-2023-vcs/repo/repo.py" language="python">}}
     </span>
     <p>Минимальный репозиторий должен содежрать директории <code>refs/</code>, <code>objects/</code> и файл
         <code>HEAD</code>.</p>
@@ -200,7 +206,7 @@ description: |
 <section class="slide">
     <h2>Объекты репозитория</h2>
     <span style="font-size: 75%">
-{{< code file="hse-2024-vcs/repo/object.py" label="object.py" language="python">}}
+{{< code file="hse-2023-vcs/repo/object.py" label="object.py" language="python">}}
     </span>
     <p>Объекты можно сложить в директорию <code>objects/</code>. Имя объекта &mdash; его SHA-1 хэш (160 бит).</p>
 </section>
@@ -226,16 +232,16 @@ description: |
 <section class="slide">
     <h2>Blob-объекты репозитория</h2>
     <span style="font-size: 75%">
-{{< code file="hse-2024-vcs/repo/blob.py" label="blob.py" language="python">}}
+{{< code file="hse-2023-vcs/repo/blob.py" label="blob.py" language="python">}}
     </span>
     <p>Blob-объект просто содержит данные файла.</p>
-    <p>Этот тип объектов не может ссылаться ни на какие другие.s</p>
+    <p>Этот тип объектов не может ссылаться ни на какие другие.</p>
 </section>
 
 <section class="slide">
     <h2>Tree-объекты репозитория</h2>
     <span style="font-size: 75%">
-{{< code file="hse-2024-vcs/repo/tree.py" label="tree.py" language="python">}}
+{{< code file="hse-2023-vcs/repo/tree.py" label="tree.py" language="python">}}
     </span>
     <p>Tree-объекты содержат список объектов внутри директории.</p>
 </section>
@@ -243,15 +249,24 @@ description: |
 <section class="slide">
     <h2>Commit-объекты репозитория</h2>
     <span style="font-size: 75%">
-{{< code file="hse-2024-vcs/repo/commit.py" label="commit.py" language="python">}}
+{{< code file="hse-2023-vcs/repo/commit.py" label="commit.py" language="python">}}
     </span>
     <p>Commit-объект содержит автора, сообщение, ссылку на дерево и родительские коммиты.</p>
 </section>
 
 <section class="slide">
+    <h2>Ветки репозитория</h2>
+    <span style="font-size: 75%">
+{{< code file="hse-2023-vcs/repo/branch.py" label="branch.py" language="python">}}
+    </span>
+    <p>Это просто файл с именем ветки, который содержит хэш коммита. То есть это просто именованная ссылка на конкретный
+        коммит.</p>
+</section>
+
+<section class="slide">
     <h2>Создаём репозиторий</h2>
     <span style="font-size: 50%">
-{{< code file="hse-2024-vcs/repo/main.py" label="main.py" language="python">}}
+{{< code file="hse-2023-vcs/repo/main.py" label="main.py" language="python">}}
     </span>
 </section>
 
@@ -309,7 +324,7 @@ git log demo --graph --stat
 <section class="slide">
     <h2>То же самое средствами Git</h2>
     <span style="font-size: 50%">
-{{< code file="hse-2024-vcs/repo.sh" label="repo.sh" language="bash">}}
+{{< code file="hse-2023-vcs/repo.sh" label="repo.sh" language="bash">}}
     </span>
 </section>
 
