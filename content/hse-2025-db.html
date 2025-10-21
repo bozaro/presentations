@@ -1,0 +1,2996 @@
+---
+title: Обзорная лекция про базы данных (2025)
+useMath: true
+---
+<style>
+    tr.read {
+        background: linear-gradient(
+            -45deg,
+            transparent 49.9%,
+            skyblue 49.9%,
+            skyblue 60%,
+            transparent 60%
+        ), linear-gradient(
+            -45deg,
+            skyblue 10%,
+            transparent 10%
+        );
+        background-size: 8px 8px;
+    }
+
+    tr.update {
+        background-color: #ffb !important;
+    }
+
+    tr.delete {
+        background-color: #fbb !important;
+    }
+
+    tr.insert {
+        background-color: #bfb !important;
+        font-weight: bold;
+    }
+
+    .changed {
+        font-weight: bold;
+    }
+
+    .obsolete {
+        font-style: italic;
+    }
+
+    .label-l, .label-r {
+        position: absolute;
+        padding-top: 2px;
+        height: 36px;
+        font-size: 80%;
+        font-weight: bold;
+        font-style: normal;
+    }
+
+    .label-l {
+        left: 100px;
+        width: 99px;
+        padding-left: 6px;
+    }
+
+    .label-l:after {
+        content: "";
+        position: absolute;
+        top: 0px;
+        left: 98px;
+        height: 36px;
+        width: 19px;
+        border: 18px solid transparent;
+        border-right: 0;
+    }
+
+    .update .label-l {
+        background-color: #ffb;
+    }
+
+    .delete .label-l {
+        background-color: #fbb;
+    }
+
+    .insert .label-l {
+        background-color: #bfb;
+    }
+
+    .update .label-l:after {
+        border-left-color: #ffb;
+    }
+
+    .delete .label-l:after {
+        border-left-color: #fbb;
+    }
+
+    .insert .label-l:after {
+        border-left-color: #bfb;
+    }
+
+    .read .label-r {
+        background-color: #bbf;
+    }
+
+    .read .label-r:before {
+        border-right-color: #bbf;
+    }
+
+    .label-r {
+        right: 100px;
+        width: 99px;
+        padding-left: 6px;
+    }
+
+    .label-r:before {
+        content: "";
+        position: absolute;
+        top: 0px;
+        right: 98px;
+        height: 36px;
+        width: 19px;
+        border: 18px solid transparent;
+        border-left: 0;
+    }
+
+    .mvcc {
+        margin-left: 120px;
+        margin-right: 120px;
+    }
+
+    .mvcc table {
+        width: 100%;
+    }
+
+    .tx-r, .tx-g, .tx-y {
+        text-align: center;
+    }
+
+    .tx-r {
+        background-color: #fbb !important;
+    }
+
+    .tx-g {
+        background-color: #bfb !important;
+    }
+
+    .tx-y {
+        background-color: #ffb !important;
+    }
+</style>
+
+<section class="slide" xmlns="http://www.w3.org/1999/html">
+    <h2 class="shout">Зачем нужна СУБД?</h2>
+</section>
+
+<section class="slide">
+    <h2>Пример приложения</h2>
+    <h3>Wishlist</h3>
+    <p>Допустим, мы хотим написать приложение wishlist, которое будет хранить список понравившихся товаров.</p>
+    <p>У нас есть простые операции: просмотр списка, добавление и удаление товаров.</p>
+    <div class="next">
+        <h3>Реализация хранилища</h3>
+        <p>Все данные загружаем в память из файла в JSON.</p>
+        <p>При изменении данных пишем JSON на диск.</p>
+        <img src="was-it-possible-there.jpg"
+             style="width: 300px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Пример приложения</h2>
+    <h3>Недостатки реализации</h3>
+    <ul>
+        <li>Запись не атомарна, можем потерят все данные</li>
+        <li>Всегда пишем всё, что не эффективно</li>
+        <li>Конкуррентный доступ требует блокировок</li>
+        <li>А если не хватит одного хоста по памяти?</li>
+        <li>Отказоустойчивость</li>
+    </ul>
+    <p>Для прототипа такое решение может сгодиться, но не более.</p>
+</section>
+<section class="slide">
+    <h2>Базовые термины</h2>
+    <dl>
+        <dt>Write Amplification</dt>
+        <dd style="font-size: 80%">Отношение размера записываемых данных в СУБД к размеру записываемых данных на
+            диск.<br/>
+            Например, в базу вставили 1 Мб данных, но на диск было записано 2 Мб - write aplification равен 2.
+        </dd>
+        <dt>Read amplification</dt>
+        <dd style="font-size: 80%">Количество чтений с диска необходимых для выполнения запроса.<br/>
+            Например, если для выполнения запроса нужно выполнить 3 чтения, то read amplification равен 3.
+        </dd>
+        <dt>Space Amplification</dt>
+        <dd style="font-size: 80%">Отношение размера данных в БД к размеру занимаемому на диске.<br/>
+            Например, размер данных в БД 1Мб, но файлы БД на диске занимают 5Мб - space amplification равен 5.
+        </dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2 class="shout">Физика</h2>
+</section>
+
+<section class="slide">
+    <h2>Стоимость типовых операций</h2>
+    <table style="font-size: 80%">
+        <thead>
+        <tr>
+            <th>Стоимость операции ()</th>
+            <th style="text-align: right">нс (ns)</th>
+            <th style="text-align: right">мкс (µs)</th>
+            <th style="text-align: right">мс (ms)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr style="font-weight: bold">
+            <td>Чтение 1Мб из RAM (последовательный доступ)</td>
+            <td align="right">50 000</td>
+            <td align="right">50</td>
+            <td align="right"></td>
+        </tr>
+        <tr>
+            <td>Round trip внутри одного датацентра</td>
+            <td align="right">100 000</td>
+            <td align="right">100</td>
+            <td align="right"></td>
+        </tr>
+        <tr style="font-weight: bold">
+            <td>Чтение 1Мб из SSD (последовательный доступ)</td>
+            <td align="right">200 000</td>
+            <td align="right">200</td>
+            <td align="right"></td>
+        </tr>
+        <tr style="font-weight: bold">
+            <td>Чтение 1Мб из RAM (случайный доступ, 64б)</td>
+            <td align="right">1 000 000</td>
+            <td align="right">1 000</td>
+            <td align="right">1</td>
+        </tr>
+        <tr>
+            <td>Сжатие 1Mb (zstd_fast)</td>
+            <td align="right">2 000 000</td>
+            <td align="right">2 000</td>
+            <td align="right">2</td>
+        </tr>
+        <tr style="font-weight: bold">
+            <td>Чтение 1Мб из HDD (последовательный доступ)</td>
+            <td align="right">2 000 000</td>
+            <td align="right">2 000</td>
+            <td align="right">2</td>
+        </tr>
+        <tr>
+            <td>Позиционирование HDD</td>
+            <td align="right">10 000 000</td>
+            <td align="right">10 000</td>
+            <td align="right">10</td>
+        </tr>
+        <tr style="font-weight: bold">
+            <td>Чтение 1Мб из SSD (случайный доступ, 8Кб)</td>
+            <td align="right">15 000 000</td>
+            <td align="right">15 000</td>
+            <td align="right">15</td>
+        </tr>
+        <tr>
+            <td>Отправка 1Mb через 1Гбит/сек сеть</td>
+            <td align="right">10 000 000</td>
+            <td align="right">10 000</td>
+            <td align="right">10</td>
+        </tr>
+        <tr>
+            <td>Round trip NA Central ⇔ West</td>
+            <td align="right">40 000 000</td>
+            <td align="right">40 000</td>
+            <td align="right">40</td>
+        </tr>
+        <tr style="font-weight: bold">
+            <td>Чтение 1Мб из HDD (случайный доступ, 8Кб)</td>
+            <td align="right">2 000 000 000</td>
+            <td align="right">2 000 000</td>
+            <td align="right">2 000</td>
+        </tr>
+        </tbody>
+    </table>
+    <a href="https://github.com/sirupsen/napkin-math">https://github.com/sirupsen/napkin-math</a>
+</section>
+
+<section class="slide">
+    <h2>Работа с данными идёт блоками</h2>
+    <h3>Выравнивание блоков</h3>
+    <ul>
+        <li>Размер кэшлинии в DDR5: 32 байта</li>
+        <li>Размер страницы памяти: 4096 байт</li>
+        <li>Размер сектора диска: 4096 байт</li>
+        <li>Размер сетевого пакета: 1500 байт</li>
+    </ul>
+    <div class="important next" style="width: 450px;">
+        <p>Размер блока должен быть выровнен и его нельзя уменьшать. Иначе получаем чтение перед записью.</p>
+    </div>
+    <img src="alignment.png" style="width: 450px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
+</section>
+
+<section class="slide">
+    <h2>Последовательная запись всегда быстрее</h2>
+    <ul>
+        <li>Особенности механики</li>
+        <li>Prefetch данных</li>
+    </ul>
+    <img src="hdd.webp" style="width: 450px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
+</section>
+
+<section class="slide">
+    <h2>Кэширование чтения</h2>
+    <dl>
+        <dt>Холодный кэш</dt>
+        <dd>Пустой кэш или кэш с устаревшими данными.</dd>
+        <dt>Тёплый кеш</dt>
+        <dd>Кеш, который содержит данные, которые часто используются.</dd>
+        <dt>LRU (Least Recently Used)</dt>
+        <dd>Кэш, когда удаляется элемент, который дольше всего не использовался.</dd>
+        </dt>
+    </dl>
+    <div class="important">
+        <ul>
+            <li>Некоторые операции могут вызывать &laquo;вымывание&raquo; кэша.</li>
+            <li>В ситуации холодного кэша система более уязвима.</li>
+        </ul>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Буферизация чтения</h2>
+    <p>Основная идея — данные временно сохраняются в специальном буфере (буфере обмена) перед записью.</p>
+    <p>Это позволяет накапливать изменения и уменьшать общее количество записи.</p>
+    <div class="important">
+        <p>Порядок записи блоков из буфера в общем случае не детерминирован.</p>
+    </div>
+</section>"
+
+<section class="slide">
+    <h2>Журнал транзакций</h2>
+    <p>Журнал транзакций — специальный журнал, который содержит информацию о всех транзакциях, которые были выполнены в
+        базе данных.</p>
+    <ul>
+        <li>Можно восстановить данные по журналу</li>
+        <li>Данные всегда пишутся в конец (амплификация записи)</li>
+        <li>Журнал позволяет передавать изменения на другой хост</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Batching</h2>
+    <p>Batching — алгоритм, который позволяет сгруппировать несколько операций в одну пачку.</p>
+    <ul>
+        <li>Позволяет уменьшить количество записей в журнале</li>
+        <li>Уменьшает нагрузку на диск</li>
+        <li>Увеличивает скорость записи</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Batching</h2>
+    <h3>Алгоритм Нейгла</h3>
+    <p>Является средством повышения эффективности работы сетей TCP/IP, позволяющим уменьшить количество пакетов, которые
+        должны быть отправлены по сети.</p>
+    <p>Пока существует отправленный пакет, для которого отправитель ещё не получил никакого подтверждения о
+        доставке, отправитель должен держать в буфере следующие данные для отправки, до тех пор, пока не наберётся
+        достаточно данных на полный пакет, который можно отправить единожды.</p>
+</section>
+
+<section class="slide">
+    <h2 class="shout">А если не влезаем в память?</h2>
+</section>
+
+<section class="slide">
+    <h2>Организация данных на диске</h2>
+    <h3>Строковая vs Колоночная СУБД</h3>
+    <img src="storage.png" style="width: 100%">
+</section>
+
+<section class="slide">
+    <h2>Организация данных на диске</h2>
+    <h3>Строковая СУБД</h3>
+    <ul>
+        <li>Более быстрая работа с OTLP-запросами (обработка транзакций)</li>
+        <li>Более эффективная запись</li>
+    </ul>
+    <h3>Колоночная СУБД</h3>
+    <ul>
+        <li>Более быстрая работа с OLAP-запросами (аналитическая нагрузка)</li>
+        <li>Более эффективное сжатие данных</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Организация данных на диске</h2>
+    <h3>B-Tree+</h3>
+    <p>B-Tree+ – это сбалансированное дерево поиска, в котором каждый узел содержит множество ключей и имеет более двух
+        потомков.</p>
+    <h3>Write amplification</h3>
+    <p class="math">`O(B)`</p>
+    <h3>Read amplification</h3>
+    <p class="math">`O(log_B (N/B))`</p>
+    <img src="b-tree.png" style="width: 650px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
+    <footer>
+        <p>N - размер БД</p>
+        <p>B - размер блока</p>
+        <p>Для простоты B и N измеряются в фиксированного размера кортежах.</p>
+    </footer>
+</section>
+
+<section class="slide">
+    <h2>Организация данных на диске</h2>
+    <h3>LSM-дерево</h3>
+    <p>LSM-дерево – структура данных, предоставляющая быстрый доступ по индексу в условиях частых запросов на
+        вставку.</p>
+    <h3>Write amplification</h3>
+    <p class="math">`O(k*log_k (N/B))`</p>
+    <h3>Read amplification</h3>
+    <p class="math">`O((log^2 (N/B))/log k)`</p>
+    <img src="lsm-tree.png" style="width: 550px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
+    <footer>
+        <p>k - коэффициент роста (то на сколько увеличивается каждый следующий уровень)</p>
+        <p><span class="math">`log_k (N/B)`</span> - количество уровней, если на верхнем уровне один файл размера B</p>
+    </footer>
+</section>
+
+<section class="slide">
+    <h2>Организация данных на диске</h2>
+    <h3>TOAST (The Oversized Attribute Storage Technique)</h3>
+    <ul>
+        <li>Объекты больше <code>TOAST_TUPLE_THRESHOLD</code> (2Кб) сжимаются;</li>
+        <li>Если объект получается больше <code>TOAST_TUPLE_TARGET</code> (2Кб), то он перемещается в отдельное
+            хранилище,
+            где хранится
+            чанками.>
+        </li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2 class="shout">SQL vs NoSQL</h2>
+</section>
+
+<section class="slide">
+    <h2>SQL vs NoSQL</h2>
+    <table>
+        <thead>
+        <tr>
+            <th width="50%">SQL</th>
+            <th width="50%">MongoDB</th>
+        </tr>
+        </thead>
+        <tbody style="font-size: 70%;">
+        <tr>
+            <td>
+                <pre><code>SELECT * FROM people</code></pre>
+            </td>
+            <td>
+                <pre><code>db.people.find()</code></pre>
+            </td>
+        </tr>
+        <tr>
+            <td>
+          <pre><code>SELECT *
+FROM people
+WHERE age > 25
+LIMIT 10</code></pre>
+            </td>
+            <td>
+          <pre><code>db.people.find({
+  age: { $gt: 25 }
+}).limit(10)</code></pre>
+            </td>
+        </tr>
+        <tr>
+            <td>
+          <pre><code>EXPLAIN SELECT *
+FROM people
+WHERE status = "A"</code></pre>
+            </td>
+            <td>
+          <pre><code>db.people.find({
+  status: "A"
+}).explain()</code></pre>
+            </td>
+        </tr>
+        <tr>
+            <td>
+          <pre><code>INSERT INTO
+people (user_id, age, status)
+VALUES ("bcd001", 45, "A")</code></pre>
+            </td>
+            <td>
+          <pre><code>db.people.insertOne({
+  user_id: "bcd001",
+  age: 45,
+  status: "A"
+})</code></pre>
+            </td>
+        </tr>
+        <tr>
+            <td>
+          <pre><code>UPDATE people
+SET age = age + 3
+WHERE status = "A"</code></pre>
+            </td>
+            <td>
+          <pre><code>db.people.updateMany(
+  { status: "A" },
+  { $inc: { age: 3 }}
+)</code></pre>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <footer>
+        <ul>
+            <li><a
+                    href="https://www.mongodb.com/docs/manual/reference/sql-comparison/">https://www.mongodb.com/docs/manual/reference/sql-comparison/</a>
+            </li>
+            <li><a
+                    href="https://www.mongodb.com/docs/manual/reference/sql-aggregation-comparison/">https://www.mongodb.com/docs/manual/reference/sql-aggregation-comparison/</a>
+            </li>
+        </ul>
+    </footer>
+</section>
+
+<section class="slide">
+    <h2>SQL</h2>
+    <p>SQL обычно подразумевает реляционную модель данных.</p>
+    <ul class="compact">
+        <li>Язык запросов SQL:
+            <ul class="compact">
+                <li>DML (Data Manipulation Language)</li>
+                <li>DDL (Data Definition Language)</li>
+            </ul>
+        </li>
+        <li>Отношения (таблицы)</li>
+        <li>Констрейнты</li>
+        <li>Внешние ключи</li>
+        <li>Реляционная алгебра</li>
+        <li>Нормализация</li>
+        <li>ACID-транзакции</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>1-ая нормальная форма</h2>
+    <p style="font-size: 80%">Переменная отношения находится в первой нормальной форме (1НФ) тогда и только тогда, когда
+        в любом допустимом значении отношения каждый его кортеж содержит только одно значение для каждого из атрибутов.
+    </p>
+    <table class="classic bordered" style="font-size: 70%">
+        <thead>
+        <tr>
+            <th>E-Mail</th>
+            <th>Пароль</th>
+            <th>Имя</th>
+            <th>Дата</th>
+            <th>Привилегии</th>
+            <th>Разделы</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>*****</td>
+            <td>Толстой Л.Н.</td>
+            <td>09.09.1828</td>
+            <td>Админ, Модератор</td>
+            <td>Новости, Флуд</td>
+        </tr>
+        <tr>
+            <td>saltykov@inbox.ru</td>
+            <td>*****</td>
+            <td>Николай Щедрин</td>
+            <td>27.01.1826</td>
+            <td>Модератор</td>
+            <td>Флуд, Юмор</td>
+        </tr>
+        <tr>
+            <td>fmd@mail.ru</td>
+            <td>*****</td>
+            <td>Федор Михайлович</td>
+            <td>11.11.1821</td>
+            <td>Игрок</td>
+            <td>E-Mail</td>
+        </tr>
+        <tr>
+            <td>sukin_syn@mail.ru</td>
+            <td>*****</td>
+            <td>Пушкин А.С.</td>
+            <td>06.06.1799</td>
+            <td>Админ</td>
+            <td>Поэзия</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>1-ая нормальная форма</h2>
+    <p style="font-size: 80%">Переменная отношения находится в первой нормальной форме (1НФ) тогда и только тогда, когда
+        в любом допустимом значении отношения каждый его кортеж содержит только одно значение для каждого из атрибутов.
+    </p>
+    <table class="classic bordered" style="font-size: 70%">
+        <thead>
+        <tr>
+            <th>E-Mail</th>
+            <th>Пароль</th>
+            <th>Имя</th>
+            <th>Дата</th>
+            <th>Привилегии</th>
+            <th>Разделы</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>*****</td>
+            <td>Толстой Л.Н.</td>
+            <td>09.09.1828</td>
+            <td>Админ</td>
+            <td>Новости</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>*****</td>
+            <td>Толстой Л.Н.</td>
+            <td>09.09.1828</td>
+            <td>Админ</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>*****</td>
+            <td>Толстой Л.Н.</td>
+            <td>09.09.1828</td>
+            <td>Модератор</td>
+            <td>Новости</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>*****</td>
+            <td>Толстой Л.Н.</td>
+            <td>09.09.1828</td>
+            <td>Модератор</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>saltykov@inbox.ru</td>
+            <td>*****</td>
+            <td>Николай Щедрин</td>
+            <td>27.01.1826</td>
+            <td>Модератор</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>saltykov@inbox.ru</td>
+            <td>*****</td>
+            <td>Николай Щедрин</td>
+            <td>27.01.1826</td>
+            <td>Модератор</td>
+            <td>Юмор</td>
+        </tr>
+        <tr>
+            <td>fmd@mail.ru</td>
+            <td>*****</td>
+            <td>Федор Михайлович</td>
+            <td>11.11.1821</td>
+            <td>Игрок</td>
+            <td>E-Mail</td>
+        </tr>
+        <tr>
+            <td>sukin_syn@mail.ru</td>
+            <td>*****</td>
+            <td>Пушкин А.С.</td>
+            <td>06.06.1799</td>
+            <td>Админ</td>
+            <td>Поэзия</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>2-ая нормальная форма</h2>
+    <p style="font-size: 80%">Переменная отношения находится во второй нормальной форме тогда и только тогда, когда она
+        находится в первой нормальной форме, и каждый неключевой атрибут неприводимо зависит от ее потенциального ключа.
+    </p>
+    <table class="classic bordered" style="font-size: 70%">
+        <thead>
+        <tr>
+            <th>E-Mail</th>
+            <th>Пароль</th>
+            <th>Имя</th>
+            <th>Дата</th>
+            <th>Привилегии</th>
+            <th>Разделы</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>*****</td>
+            <td>Толстой Л.Н.</td>
+            <td>09.09.1828</td>
+            <td>Админ</td>
+            <td>Новости</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>*****</td>
+            <td>Толстой Л.Н.</td>
+            <td>09.09.1828</td>
+            <td>Админ</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>*****</td>
+            <td>Толстой Л.Н.</td>
+            <td>09.09.1828</td>
+            <td>Модератор</td>
+            <td>Новости</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>*****</td>
+            <td>Толстой Л.Н.</td>
+            <td>09.09.1828</td>
+            <td>Модератор</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>saltykov@inbox.ru</td>
+            <td>*****</td>
+            <td>Николай Щедрин</td>
+            <td>27.01.1826</td>
+            <td>Модератор</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>saltykov@inbox.ru</td>
+            <td>*****</td>
+            <td>Николай Щедрин</td>
+            <td>27.01.1826</td>
+            <td>Модератор</td>
+            <td>Юмор</td>
+        </tr>
+        <tr>
+            <td>fmd@mail.ru</td>
+            <td>*****</td>
+            <td>Федор Михайлович</td>
+            <td>11.11.1821</td>
+            <td>Игрок</td>
+            <td>E-Mail</td>
+        </tr>
+        <tr>
+            <td>sukin_syn@mail.ru</td>
+            <td>*****</td>
+            <td>Пушкин А.С.</td>
+            <td>06.06.1799</td>
+            <td>Админ</td>
+            <td>Поэзия</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>2-ая нормальная форма</h2>
+    <p style="font-size: 80%">Переменная отношения находится во второй нормальной форме тогда и только тогда, когда она
+        находится в первой нормальной форме, и каждый неключевой атрибут неприводимо зависит от ее потенциального ключа.
+    </p>
+    <table class="classic bordered" style="font-size: 60%">
+        <thead>
+        <tr>
+            <th>E-Mail</th>
+            <th>Пароль</th>
+            <th>Имя</th>
+            <th>Дата</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>*****</td>
+            <td>Толстой Л.Н.</td>
+            <td>09.09.1828</td>
+        </tr>
+        <tr>
+            <td>saltykov@inbox.ru</td>
+            <td>*****</td>
+            <td>Николай Щедрин</td>
+            <td>27.01.1826</td>
+        </tr>
+        <tr>
+            <td>fmd@mail.ru</td>
+            <td>*****</td>
+            <td>Федор Михайлович</td>
+            <td>11.11.1821</td>
+        </tr>
+        <tr>
+            <td>sukin_syn@mail.ru</td>
+            <td>*****</td>
+            <td>Пушкин А.С.</td>
+            <td>06.06.1799</td>
+        </tr>
+        </tbody>
+    </table>
+    <table class="classic bordered" style="font-size: 60%">
+        <thead>
+        <tr>
+            <th>E-Mail</th>
+            <th>Привилегии</th>
+            <th>Разделы</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>Админ</td>
+            <td>Новости</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>Админ</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>Модератор</td>
+            <td>Новости</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>Модератор</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>saltykov@inbox.ru</td>
+            <td>Модератор</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>saltykov@inbox.ru</td>
+            <td>Модератор</td>
+            <td>Юмор</td>
+        </tr>
+        <tr>
+            <td>fmd@mail.ru</td>
+            <td>Игрок</td>
+            <td>E-Mail</td>
+        </tr>
+        <tr>
+            <td>sukin_syn@mail.ru</td>
+            <td>Админ</td>
+            <td>Поэзия</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>3-я нормальная форма</h2>
+    <p style="font-size: 80%">Переменная отношения находится в третьей нормальной форме, когда она находится во второй
+        нормальной форме, и отсутствуют транзитивные функциональные зависимости неключевых атрибутов от ключевых.
+    </p>
+    <table class="classic bordered" style="font-size: 60%">
+        <thead>
+        <tr>
+            <th>TopicID</th>
+            <th>Заголовок</th>
+            <th>Дата</th>
+            <th>Автор</th>
+            <th>E-Mail</th>
+            <th>Текст</th>
+            <th>Оценка</th>
+            <th>Ответы</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>5</td>
+            <td>Руслан и Людмила</td>
+            <td>01.01.1820</td>
+            <td>Пушкин А.С.</td>
+            <td>sukin_syn@mail.ru</td>
+            <td>…</td>
+            <td>500</td>
+            <td>120</td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td>Война и Мир</td>
+            <td>01.03.1869</td>
+            <td>Толстой Л.Н.</td>
+            <td>tolstoy@inbox.ru</td>
+            <td>…</td>
+            <td>100</td>
+            <td>345</td>
+        </tr>
+        <tr>
+            <td>12</td>
+            <td>Отцы и Дети</td>
+            <td>15.08.1862</td>
+            <td>Иван Тургенев</td>
+            <td>nedobobov@mail.ru</td>
+            <td>…</td>
+            <td>256</td>
+            <td>18</td>
+        </tr>
+        <tr>
+            <td>43</td>
+            <td>Повести Белкина</td>
+            <td>12.06.1830</td>
+            <td>Пушкин А.С.</td>
+            <td>sukin_syn@mail.ru</td>
+            <td>…</td>
+            <td>400</td>
+            <td>96</td>
+        </tr>
+        <tr>
+            <td>16</td>
+            <td>Муму</td>
+            <td>10.11.1852</td>
+            <td>Иван Тургенев</td>
+            <td>nedobobov@mail.ru</td>
+            <td>…</td>
+            <td>312</td>
+            <td>46</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>3-я нормальная форма</h2>
+    <p style="font-size: 80%">Переменная отношения находится в третьей нормальной форме, когда она находится во второй
+        нормальной форме, и отсутствуют транзитивные функциональные зависимости неключевых атрибутов от ключевых.
+    </p>
+    <table class="classic bordered" style="font-size: 70%">
+        <thead>
+        <tr>
+            <th>E-Mail</th>
+            <th>Автор</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>sukin_syn@mail.ru</td>
+            <td>Пушкин А.С.</td>
+        </tr>
+        <tr>
+            <td>tolstoy@inbox.ru</td>
+            <td>Толстой Л.Н.</td>
+        </tr>
+        <tr>
+            <td>nedobobov@mail.ru</td>
+            <td>Иван Тургенев</td>
+        </tr>
+    </table>
+    <table class="classic bordered" style="font-size: 60%">
+        <thead>
+        <tr>
+            <th>TopicID</th>
+            <th>Заголовок</th>
+            <th>Дата</th>
+            <th>E-Mail</th>
+            <th>Текст</th>
+            <th>Оценка</th>
+            <th>Ответы</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>5</td>
+            <td>Руслан и Людмила</td>
+            <td>01.01.1820</td>
+            <td>sukin_syn@mail.ru</td>
+            <td>…</td>
+            <td>500</td>
+            <td>120</td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td>Война и Мир</td>
+            <td>01.03.1869</td>
+            <td>tolstoy@inbox.ru</td>
+            <td>…</td>
+            <td>100</td>
+            <td>345</td>
+        </tr>
+        <tr>
+            <td>12</td>
+            <td>Отцы и Дети</td>
+            <td>15.08.1862</td>
+            <td>nedobobov@mail.ru</td>
+            <td>…</td>
+            <td>256</td>
+            <td>18</td>
+        </tr>
+        <tr>
+            <td>43</td>
+            <td>Повести Белкина</td>
+            <td>12.06.1830</td>
+            <td>sukin_syn@mail.ru</td>
+            <td>…</td>
+            <td>400</td>
+            <td>96</td>
+        </tr>
+        <tr>
+            <td>16</td>
+            <td>Муму</td>
+            <td>10.11.1852</td>
+            <td>nedobobov@mail.ru</td>
+            <td>…</td>
+            <td>312</td>
+            <td>46</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>4-ая нормальная форма</h2>
+    <p style="font-size: 80%">Переменная отношения находится в четвёртой нормальной форме, если она находится в третьей
+        нормальной форме и не содержит нетривиальных многозначных зависимостей.
+    </p>
+    <table class="classic bordered" style="font-size: 80%">
+        <thead>
+        <tr>
+            <th>E-Mail</th>
+            <th>Привилегии</th>
+            <th>Разделы</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>Админ</td>
+            <td>Новости</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>Админ</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>Модератор</td>
+            <td>Новости</td>
+        </tr>
+        <tr>
+            <td>tolstoy@mail.ru</td>
+            <td>Модератор</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>saltykov@inbox.ru</td>
+            <td>Модератор</td>
+            <td>Флуд</td>
+        </tr>
+        <tr>
+            <td>saltykov@inbox.ru</td>
+            <td>Модератор</td>
+            <td>Юмор</td>
+        </tr>
+        <tr>
+            <td>fmd@mail.ru</td>
+            <td>Игрок</td>
+            <td>E-Mail</td>
+        </tr>
+        <tr>
+            <td>sukin_syn@mail.ru</td>
+            <td>Админ</td>
+            <td>Поэзия</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>4-ая нормальная форма</h2>
+    <p style="font-size: 80%">Переменная отношения находится в четвёртой нормальной форме, если она находится в третьей
+        нормальной форме и не содержит нетривиальных многозначных зависимостей.
+    </p>
+    <div style="display: table; width: 100%">
+        <div style="display: table-cell; padding-right: 10px">
+            <table class="classic bordered" style="font-size: 80%">
+                <thead>
+                <tr>
+                    <th>E-Mail</th>
+                    <th>Привилегии</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>tolstoy@mail.ru</td>
+                    <td>Админ</td>
+                </tr>
+                <tr>
+                    <td>tolstoy@mail.ru</td>
+                    <td>Модератор</td>
+                </tr>
+                <tr>
+                    <td>saltykov@inbox.ru</td>
+                    <td>Модератор</td>
+                </tr>
+                <tr>
+                    <td>fmd@mail.ru</td>
+                    <td>Игрок</td>
+                </tr>
+                <tr>
+                    <td>sukin_syn@mail.ru</td>
+                    <td>Админ</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="display: table-cell">
+            <table class="classic bordered" style="font-size: 80%">
+                <thead>
+                <tr>
+                    <th>E-Mail</th>
+                    <th>Разделы</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>tolstoy@mail.ru</td>
+                    <td>Новости</td>
+                </tr>
+                <tr>
+                    <td>tolstoy@mail.ru</td>
+                    <td>Флуд</td>
+                </tr>
+                <tr>
+                    <td>saltykov@inbox.ru</td>
+                    <td>Флуд</td>
+                </tr>
+                <tr>
+                    <td>saltykov@inbox.ru</td>
+                    <td>Юмор</td>
+                </tr>
+                <tr>
+                    <td>fmd@mail.ru</td>
+                    <td>E-Mail</td>
+                </tr>
+                <tr>
+                    <td>sukin_syn@mail.ru</td>
+                    <td>Поэзия</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Нормализация</h2>
+    <ul>
+        <li>Нормализованные таблицы обычно обновляются быстрее, чем ненормализованные.</li>
+        <li>Когда данные хорошо нормализованы, они либо редко дублируются, либо не дублируются совсем. Так что изменять
+            приходится меньше данных.
+        </li>
+        <li>Нормализованные таблицы обычно меньше по размеру, поэтому лучше помещаются в памяти и их производительность
+            выше.
+        </li>
+        <li>Из-за отсутствия избыточных данных реже возникает необходимость в запросах с фразами DISTINCT или GROUP BY
+            для извлечения списков значений.
+        </li>
+        <li>Нормализованные данные требуют большего количества JOIN-ов для выборки.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Денормализация</h2>
+    <dl>
+        <dt>Денормализация</dt>
+        <dd>Намеренное приведение структуры базы данных в состояние, не соответствующее критериям нормализации, обычно
+            проводимое с целью ускорения операций чтения из базы за счет добавления избыточных данных.
+        </dd>
+    </dl>
+    <ul>
+        <li>Обновление данных триггерах.</li>
+        <li>Обновление данных по расписанию.</li>
+        <li>Инкрементальное обновление данных.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2 class="shout">Выборка данных</h2>
+</section>
+
+<section class="slide">
+    <h2>Поиграемся с базой данных</h2>
+    <p>Чтобы поиграться можно взять готовые базы даных:</p>
+    <ul>
+        <li><a href="https://wiki.postgresql.org/wiki/Sample_Databases">PostgreSQL Sample Database</a></li>
+        <li><a href="https://grouplens.org/datasets/movielens/">MovieLens</a></li>
+    </ul>
+    <p>Для импорта данных MovieLens есть скприт: <a
+            href="https://github.com/bozaro/presentations/tree/master/scripts/movielens">https://github.com/bozaro/presentations/tree/master/scripts/movielens</a>.
+    </p>
+</section>
+
+<section class="slide">
+    <h2>Простой запрос на поиск</h2>
+    <pre><code class="sql">SELECT * FROM movies WHERE title = 'Titanic';</code></pre>
+    <pre><code>   id   |  title  | year
+--------+---------+------
+   1721 | Titanic | 1997
+   3404 | Titanic | 1953
+ 118916 | Titanic | 1996
+ 181653 | Titanic | 1943
+(4 rows)</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Простой запрос на поиск</h2>
+    <pre style="font-size: 90%"><code class="sql">EXPLAIN ANALYZE
+SELECT * FROM movies WHERE title = 'Titanic';</code></pre>
+    <pre style="font-size: 70%"><code>                      QUERY PLAN
+--------------------------------------------------------
+Seq Scan on movies  (cost=0.00..1707.71 rows=1 width=27)
+  Filter: (title = 'Titanic'::text)
+  Rows Removed by Filter: 86533
+Planning Time: 0.077 ms
+Execution Time: 7.331 ms</code></pre>
+    <div class="next">
+        <pre style="font-size: 90%"><code class="sql">CREATE INDEX idx_movies_title ON movies (title);</code></pre>
+    </div>
+    <div class="next">
+    <pre style="font-size: 90%"><code class="sql">EXPLAIN ANALYZE
+SELECT * FROM movies WHERE title = 'Titanic';</code></pre>
+        <pre style="font-size: 70%"><code>                                QUERY PLAN
+-----------------------------------------------------------------------------
+Index Scan using idx_movies_title on movies (cost=0.42..8.44 rows=1 width=27)
+  Index Cond: (title = 'Titanic'::text)
+Planning Time: 0.325 ms
+Execution Time: 0.089 ms</code></pre>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Простой запрос на поиск</h2>
+    <h3>Варианты сканирования таблицы</h3>
+    <dl>
+        <dt>Seq Scan</dt>
+        <dd>Последовательное сканирование таблицы.</dd>
+        <dt>Index Scan</dt>
+        <dd>Сканирование по индексу.</dd>
+        <dt>Bitmap Index Scan</dt>
+        <dd>По индексу строится битовая карта.</dd>
+        <dt>Index Only Scan</dt>
+        <dd>Сканирование покрывающего индекса.</dd>
+    </dl>
+    <p>Для выбора стратегии планировщик использует ранее собранную статистику.</p>
+</section>
+
+<section class="slide">
+    <h2>JOIN-стратегии</h2>
+    <dl>
+        <dt>MERGE JOIN</dt>
+        <dd>Соединение двух отсортированных последовательностей.<br/>
+            Работает быстро и за один проход обоих списков.
+        </dd>
+
+        <dt>HASH JOIN</dt>
+        <dd>Меньшее отношение помещается в хэш-таблицу. Затем для каждой строки из большей таблицы выполняется поиск
+            значений, соответствующих условию соединения.<br/>
+            Соединение только по условию эквивалентности.
+        </dd>
+
+        <dt>NESTED LOOP</dt>
+        <dd>Соединение вложенными циклами.</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Не все индексы одинаково полезны</h2>
+    <ul>
+        <li>Индексы позволяют существенно сократить время выполнения запроса.</li>
+        <li>Индексы требуют ресурсов для своей работы (память, запись).</li>
+        <li>Для экономии места и записи индекс иногда можно сделать частичным.</li>
+        <li>В некоторых СУБД существует понятие кластерного индекса.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Еще пара слов про SQL</h2>
+    <p>SQL - декларативный язык.</p>
+    <p>Для написания эффективных запросов надо мыслить категориями множеств.</p>
+</section>
+
+<section class="slide">
+    <h2 class="shout">Транзакции</h2>
+</section>
+
+<section class="slide">
+    <h2>ACID</h2>
+    <img style="position: absolute; right: 50px; bottom: 50px; border: 1px solid black" height="280" src="jim-gray.jpg">
+    <p>ACID описывает требования к транзакционной системе, обеспечивающие наиболее надёжную и предсказуемую её работу.
+        Требования ACID были в основном сформулированы в конце 70-х годов Джимом Греем.</p>
+    <ul>
+        <li><b>A</b>tomicity — Атомарность</li>
+        <li><b>C</b>onsistency — Согласованность</li>
+        <li><b>I</b>solation — Изолированность</li>
+        <li><b>D</b>urability — Долговечность</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Журнал транзакций</h2>
+    <img style="position: absolute; right: 50px; bottom: 50px" height="280" src="hdd.png">
+    <p>Общий алгоритм:</p>
+    <ul class="compact">
+        <li>измения пишутся в журнал транзакций (состояние до и после) и изменяются страницы БД в памяти;</li>
+        <li>в журнал транзакций сбрасывается маркер успешного завершения транзакции;</li>
+        <li>журнал транзакций сбрасывается на диск;</li>
+        <li>данные страниц БД пишутся на диск;</li>
+        <li>данные страниц БД сбрасываются на диск.</li>
+    </ul>
+    <div class="important next" style="width: 550px">
+        <p>Минимальное время транзакции не меньше времени сброса данных на диск.</p>
+    </div>
+    <footer class="footer">https://habrahabr.ru/post/181584/</footer>
+</section>
+
+<section class="slide">
+    <h2>Приблизительные значения IOPS</h2>
+    <table class="classic">
+        <thead>
+        <tr>
+            <th>Тип</th>
+            <th>Устройство</th>
+            <th>IOPS</th>
+            <th>Интерфейс</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>HDD</td>
+            <td>7,200 об/мин SATA-диски</td>
+            <td>~75-100</td>
+            <td>SATA 3 Гбит/с</td>
+        </tr>
+        <tr>
+            <td>HDD</td>
+            <td>10,000 об/мин SATA-диски</td>
+            <td>~125-150</td>
+            <td>SATA 3 Гбит/с</td>
+        </tr>
+        <tr>
+            <td>HDD</td>
+            <td>10,000 об/мин SAS-диски</td>
+            <td>~140</td>
+            <td>SAS</td>
+        </tr>
+        <tr>
+            <td>HDD</td>
+            <td>15,000 об/мин SAS-диски</td>
+            <td>~175-210</td>
+            <td>SAS</td>
+        </tr>
+        <tr>
+            <td>SSD</td>
+            <td>Intel X25-M G2 MLC</td>
+            <td>~8 600</td>
+            <td>SATA 3 Гбит/с</td>
+        </tr>
+        <tr>
+            <td>SSD</td>
+            <td>OCZ Vertex 3</td>
+            <td>~60 000 (4K)</td>
+            <td>SATA 6 Гбит/с</td>
+        </tr>
+        <tr>
+            <td>SSD</td>
+            <td>OCZ Vertex 3 MAX IOPS</td>
+            <td>~75 000 (4K)</td>
+            <td>SATA 6 Гбит/с</td>
+        </tr>
+        <tr>
+            <td>SSD</td>
+            <td>OCZ Vertex 4</td>
+            <td>~120 000 IOPS (4K)</td>
+            <td>SATA 6 Гбит/с</td>
+        </tr>
+        <tr>
+            <td>SSD</td>
+            <td>OCZ RevoDrive 3 X2</td>
+            <td>~200 000 IOPS (4K)</td>
+            <td>PCIe</td>
+        </tr>
+        <tr>
+            <td>SSD</td>
+            <td>OCZ Z-Drive R4 CloudServ</td>
+            <td>~500 000 IOPS</td>
+            <td>PCIe</td>
+        </tr>
+        </tbody>
+    </table>
+    <footer class="footer">https://ru.wikipedia.org/wiki/IOPS</footer>
+</section>
+
+<section class="slide">
+    <h2>Журнал транзакций. Бонус</h2>
+    <img style="position: absolute; right: 50px; bottom: 50px" height="360" src="bonus.png">
+    <p>На базе журнала транзакций так же реализуется ряд дополнительных возможностей:</p>
+    <ul>
+        <li>Point in time recovery;</li>
+        <li>Репликация.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Уровни изолированности транзакций</h2>
+    <ul class="compact">
+        <li>Read uncommitted - чтение незафиксированных данных</li>
+        <li>Read committed (по-умолчанию) - чтение фиксированных данных</li>
+        <li>Repeatable read - повторяемость чтения</li>
+        <li>Serializable - упорядочиваемость</li>
+    </ul>
+    <table class="classic bordered" style="font-size: 70%">
+        <thead>
+        <th>Уровень изоляции</th>
+        <th>Потерянное обновление</th>
+        <th>«Грязное» чтение</th>
+        <th>Неповторяющееся чтение</th>
+        <th>Фантомное чтение</th>
+        <th>Аномалии сериализации</th>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Read&nbsp;uncommited</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-y">допускается</td>
+            <td class="tx-r">возможно</td>
+            <td class="tx-r">возможно</td>
+            <td class="tx-r">возможно</td>
+        </tr>
+        <tr>
+            <td>Read&nbsp;commited</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-r">возможно</td>
+            <td class="tx-r">возможно</td>
+            <td class="tx-r">возможно</td>
+        </tr>
+        <tr>
+            <td>Repeatable&nbsp;read</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-y">допускается</td>
+            <td class="tx-r">возможно</td>
+        </tr>
+        <tr>
+            <td>Serializable</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+        </tr>
+        </tbody>
+    </table>
+    <footer class="footer">https://technet.microsoft.com/en-us/library/cc546518.aspx</footer>
+</section>
+
+<section class="slide">
+    <h2>Потерянное обновление (Lost Update)</h2>
+    <p>Потерянное обновление происходит в случае перезатирания изменений другой транзакцией до заврешнения транзакции,
+        сделавшей изменения.</p>
+    <table class="classic bordered">
+        <thead>
+        <th>Транзакция 1</th>
+        <th>Транзакция 2</th>
+        </thead>
+        <tbody style="font-size: 70%">
+        <tr>
+            <td>
+                <pre><code class="sql">UPDATE tbl1 SET f2=f2+20 WHERE f1=1;</code></pre>
+            </td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td>
+                <pre><code class="sql">UPDATE tbl1 SET f2=f2+25 WHERE f1=1;</code></pre>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>«Грязное» чтение (Dirty Read)</h2>
+    <p>Чтение данных, добавленных или изменённых еще не завершенной транзакцией.</p>
+    <table class="classic bordered">
+        <thead>
+        <th>Транзакция 1</th>
+        <th>Транзакция 2</th>
+        </thead>
+        <tbody style="font-size: 70%">
+        <tr>
+            <td><pre><code class="sql">SELECT f2 FROM tbl1 WHERE f1=1;
+f2
+---------
+100
+(1 row)</code></pre>
+            </td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>
+                <pre><code class="sql">UPDATE tbl1 SET f2=200 WHERE f1=1;</code></pre>
+            </td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td><pre><code class="sql">SELECT f2 FROM tbl1 WHERE f1=1;
+f2
+---------
+200
+(1 row)</code></pre>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <pre><code class="sql">ROLLBACK;</code></pre>
+            </td>
+            <td>&nbsp;</td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>Неповторяющееся чтение (Non-Repeatable Read)</h2>
+    <p>При повторном чтении в рамках одной транзакции ранее прочитанные данные оказываются изменёнными.</p>
+    <table class="classic bordered">
+        <thead>
+        <th>Транзакция 1</th>
+        <th>Транзакция 2</th>
+        </thead>
+        <tbody style="font-size: 70%">
+        <tr>
+            <td>&nbsp;</td>
+            <td>
+                <pre><code class="sql">SELECT f2 FROM tbl1 WHERE f1=1;</code></pre>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <pre><code class="sql">UPDATE tbl1 SET f2=f2+1 WHERE f1=1;</code></pre>
+            </td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>
+                <pre><code class="sql">COMMIT;</code></pre>
+            </td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td>
+                <pre><code class="sql">SELECT f2 FROM tbl1 WHERE f1=1;</code></pre>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>Чтение "фантомов" (Phantom Reads)</h2>
+    <p>Ситуация, когда при повторном чтении в рамках одной транзакции одна и та же выборка дает разные множества
+        строк.</p>
+    <p>От неповторяющегося чтения оно отличается тем, что результат повторного обращения к данным изменился не из-за
+        изменения/удаления самих этих данных, а из-за появления новых (фантомных) данных.</p>
+    <table class="classic bordered">
+        <thead>
+        <th>Транзакция 1</th>
+        <th>Транзакция 2</th>
+        </thead>
+        <tbody style="font-size: 70%">
+        <tr>
+            <td>&nbsp;</td>
+            <td>
+                <pre><code class="sql">SELECT SUM(f2) FROM tbl1;</code></pre>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <pre><code class="sql">INSERT INTO tbl1 (f1,f2) VALUES (15,20);</code></pre>
+            </td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>
+                <pre><code class="sql">COMMIT;</code></pre>
+            </td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td>
+                <pre><code class="sql">SELECT SUM(f2) FROM tbl1;</code></pre>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>Аномалии сериализации</h2>
+    <p>Ситуация, когда параллельное выполнение транзакций приводит к результату, невозможному при последовательном
+        выполнении тех же транзакций.</p>
+    <table class="classic bordered">
+        <thead>
+        <th>Транзакция 1</th>
+        <th>Транзакция 2</th>
+        </thead>
+        <tbody style="font-size: 70%">
+        <tr>
+            <td>
+                <pre><code class="sql">SELECT SUM(value) FROM mytab
+WHERE class = 1;
+---------
+30
+(1 row)</code></pre>
+            </td>
+            <td>
+                <pre><code class="sql">SELECT SUM(value) FROM mytab
+WHERE class = 2;
+---------
+300
+(1 row)</code></pre>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <pre><code class="sql">INSERT INTO mytab (value, class)
+VALUES (30, 2)</code></pre>
+            </td>
+            <td>
+                <pre><code class="sql">INSERT INTO mytab (value, class)
+VALUES (300, 1)</code></pre>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <pre><code class="sql">COMMIT;</code></pre>
+            </td>
+            <td>
+                <pre><code class="sql">COMMIT;</code></pre>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="slide">
+    <h2>Уровни изолированности транзакций</h2>
+    <table class="classic bordered" style="font-size: 70%">
+        <thead>
+        <th>Уровень изоляции</th>
+        <th>Потерянное обновление</th>
+        <th>«Грязное» чтение</th>
+        <th>Неповторяющееся чтение</th>
+        <th>Фантомное чтение</th>
+        <th>Аномалии сериализации</th>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Read&nbsp;uncommited</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-y">допускается</td>
+            <td class="tx-r">возможно</td>
+            <td class="tx-r">возможно</td>
+            <td class="tx-r">возможно</td>
+        </tr>
+        <tr>
+            <td>Read&nbsp;commited</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-r">возможно</td>
+            <td class="tx-r">возможно</td>
+            <td class="tx-r">возможно</td>
+        </tr>
+        <tr>
+            <td>Repeatable&nbsp;read</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-y">допускается</td>
+            <td class="tx-r">возможно</td>
+        </tr>
+        <tr>
+            <td>Serializable</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+            <td class="tx-g">не&nbsp;возможно</td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="important next">
+        <p>Более выской уровень изоляции транзакций уменьшает количество аномалий за счет увеличения количества
+            блокировок и вероятности отката транзакции.</p>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>READ COMMITED</h2>
+    <h3>Вариант A</h3>
+    <pre><code class="sql" style="font-size: 75%">SELECT id, money FROM account WHERE name = 'Romeo';
+SELECT id, money FROM account WHERE name = 'Giulietta';
+UPDATE account SET money = 500 WHERE id = 13 AND money = 600;
+UPDATE account SET money = 200 WHERE id = 42 AND money = 100;
+COMMIT;
+</code></pre>
+    <h3>Вариант B</h3>
+    <pre><code class="sql" style="font-size: 75%">SELECT id, money FROM account WHERE name = 'Romeo';
+COMMIT;
+---
+SELECT id, money FROM account WHERE name = 'Giulietta';
+COMMIT;
+---
+UPDATE account SET money = 500 WHERE id = 13 AND money = 600;
+UPDATE account SET money = 200 WHERE id = 42 AND money = 100;
+COMMIT;
+</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Изолированность. Блокировки</h2>
+    <p>Для обеспечения изоляции на данные делают блокировки.</p>
+    <p>Блокировки могут быть разных уровней:</p>
+    <ul>
+        <li>Базы</li>
+        <li>Таблицы</li>
+        <li>Кортежа</li>
+        <li>Диапазона индексов</li>
+    </ul>
+    <p>Проблема такого подхода в том, что пишущие транзакции могут заблокировать читающие транзакции.</p>
+</section>
+
+<section class="slide">
+    <h2>Изолированность. MVCC</h2>
+    <dl>
+        <dt>MVCC</dt>
+        <dd>MultiVersion Concurrency Control</dd>
+    </dl>
+    <ul>
+        <li>Разные пользователи могут одновременно работать с одними и теми же данными;</li>
+        <li>Каждый пользователь видит свой изолированный срез данных;</li>
+        <li>Изменения, вносимые пользователем, никому не видны до завершения транзации.</li>
+    </ul>
+    <footer class="footer">
+        <ul>
+            <li>https://www.slideshare.net/robertsosinski/mvcc-robert-sosinski</li>
+            <li>http://momjian.us/main/writings/pgsql/mvcc.pdf</li>
+        </ul>
+    </footer>
+</section>
+
+<section class="slide">
+    <h2>UPDATE IN PLACE 1: TABLE</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talking to alice</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>UPDATE IN PLACE 2: SCAN</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr class="read">
+                <td>1</td>
+                <td>Alice</td>
+                <td>
+                    <div class="label-r">read</div>
+                    Great at programming
+                </td>
+            </tr>
+            <tr class="read">
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talking to alice</td>
+            </tr>
+            <tr class="read">
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>UPDATE IN PLACE 3: UPDATE</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update">
+                <td>
+                    <div class="label-l">~ update</div>
+                    2
+                </td>
+                <td>Bob</td>
+                <td>Always talking to alice</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>UPDATE IN PLACE 4: UPDATED</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update">
+                <td>
+                    <div class="label-l">~ update</div>
+                    2
+                </td>
+                <td>Bob</td>
+                <td class="changed">Working very hard</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>UPDATE IN PLACE 5: INSERT</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update">
+                <td>2</td>
+                <td>Bob</td>
+                <td class="changed">Working very hard</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            <tr class="insert">
+                <td>
+                    <div class="label-l">+ insert</div>
+                    4
+                </td>
+                <td>Dave</td>
+                <td>Very promising new-hire</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>UPDATE IN PLACE 6: DELETE</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update">
+                <td>2</td>
+                <td>Bob</td>
+                <td class="changed">Working very hard</td>
+            </tr>
+            <tr class="delete">
+                <td>
+                    <div class="label-l">- delete</div>
+                    3
+                </td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            <tr class="insert">
+                <td>4</td>
+                <td>Dave</td>
+                <td>Very promising new-hire</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>UPDATE IN PLACE 7</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update">
+                <td>2</td>
+                <td>Bob</td>
+                <td class="changed">Working very hard</td>
+            </tr>
+            <tr class="insert">
+                <td>4</td>
+                <td>Dave</td>
+                <td>Very promising new-hire</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>UPDATE IN PLACE 8: REALITY</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr class="read">
+                <td>1</td>
+                <td>Alice</td>
+                <td>
+                    <div class="label-r">read</div>
+                    Great at programming
+                </td>
+            </tr>
+            <tr class="read update">
+                <td>
+                    <div class="label-l">+ update</div>
+                    2
+                </td>
+                <td>Bob</td>
+                <td class="read changed">Working very hard</td>
+            </tr>
+            <tr class="read delete">
+                <td>
+                    <div class="label-l">- delete</div>
+                    3
+                </td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            <tr class="insert">
+                <td>
+                    <div class="label-l">+ insert</div>
+                    4
+                </td>
+                <td>Dave</td>
+                <td>Very promising new-hire</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>MVCC 1: TABLE</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>
+                    <div class="label-r">TXID: 103</div>
+                    xmin
+                </th>
+                <th>xmax</th>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>100</td>
+                <td>0</td>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr>
+                <td>101</td>
+                <td>0</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talk to alice</td>
+            </tr>
+            <tr>
+                <td>102</td>
+                <td>0</td>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>MVCC 2: UPDATE</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>
+                    <div class="label-r">TXID: 103</div>
+                    xmin
+                </th>
+                <th>xmax</th>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>100</td>
+                <td>0</td>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update">
+                <td>
+                    <div class="label-l">- update</div>
+                    101
+                </td>
+                <td>0</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talk to alice</td>
+            </tr>
+            <tr>
+                <td>102</td>
+                <td>0</td>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>MVCC 3: UPDATE IN PROGRESS</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>
+                    <div class="label-r">TXID: 103</div>
+                    xmin
+                </th>
+                <th>xmax</th>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>100</td>
+                <td>0</td>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update obsolete">
+                <td>
+                    <div class="label-l">- update</div>
+                    101
+                </td>
+                <td class="changed">103</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talk to alice</td>
+            </tr>
+            <tr>
+                <td>102</td>
+                <td>0</td>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>MVCC 4: UPDATE IN PROGRESS</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>
+                    <div class="label-r">TXID: 103</div>
+                    xmin
+                </th>
+                <th>xmax</th>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>100</td>
+                <td>0</td>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update obsolete">
+                <td>
+                    <div class="label-l">- update</div>
+                    101
+                </td>
+                <td class="changed">103</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talk to alice</td>
+            </tr>
+            <tr>
+                <td>102</td>
+                <td>0</td>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            <tr class="update changed">
+                <td>
+                    <div class="label-l">+ update</div>
+                    103
+                </td>
+                <td>0</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Working very hard</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>MVCC 5: UPDATED</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>
+                    <div class="label-r">TXID: 104</div>
+                    xmin
+                </th>
+                <th>xmax</th>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>100</td>
+                <td>0</td>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update obsolete">
+                <td>101</td>
+                <td class="changed">103</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talk to alice</td>
+            </tr>
+            <tr>
+                <td>102</td>
+                <td>0</td>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            <tr class="update changed">
+                <td>103</td>
+                <td>0</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Working very hard</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>MVCC 6: INSERT</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>
+                    <div class="label-r">TXID: 104</div>
+                    xmin
+                </th>
+                <th>xmax</th>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>100</td>
+                <td>0</td>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update obsolete">
+                <td>101</td>
+                <td class="changed">103</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talk to alice</td>
+            </tr>
+            <tr>
+                <td>102</td>
+                <td>0</td>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            <tr class="update changed">
+                <td>103</td>
+                <td>0</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Working very hard</td>
+            </tr>
+            <tr class="insert">
+                <td>
+                    <div class="label-l">+ insert</div>
+                    104
+                </td>
+                <td>0</td>
+                <td>4</td>
+                <td>Dave</td>
+                <td>Very promising new-hire</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>MVCC 7: INSERTED</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>
+                    <div class="label-r">TXID: 105</div>
+                    xmin
+                </th>
+                <th>xmax</th>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>100</td>
+                <td>0</td>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update obsolete">
+                <td>101</td>
+                <td class="changed">103</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talk to alice</td>
+            </tr>
+            <tr>
+                <td>102</td>
+                <td>0</td>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            <tr class="update changed">
+                <td>103</td>
+                <td>0</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Working very hard</td>
+            </tr>
+            <tr class="insert">
+                <td>104</td>
+                <td>0</td>
+                <td>4</td>
+                <td>Dave</td>
+                <td>Very promising new-hire</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>MVCC 8: DELETE</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>
+                    <div class="label-r">TXID: 105</div>
+                    xmin
+                </th>
+                <th>xmax</th>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>100</td>
+                <td>0</td>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update obsolete">
+                <td>101</td>
+                <td class="changed">103</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talk to alice</td>
+            </tr>
+            <tr class="delete obsolete">
+                <td>
+                    <div class="label-l">- delete</div>
+                    102
+                </td>
+                <td>105</td>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            <tr class="update changed">
+                <td>103</td>
+                <td>0</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Working very hard</td>
+            </tr>
+            <tr class="insert">
+                <td>104</td>
+                <td>0</td>
+                <td>4</td>
+                <td>Dave</td>
+                <td>Very promising new-hire</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>MVCC 9: DELETED</h2>
+    <div class="mvcc">
+        <table class="classic bordered">
+            <thead>
+            <tr>
+                <th>
+                    <div class="label-r">TXID: 106</div>
+                    xmin
+                </th>
+                <th>xmax</th>
+                <th>id</th>
+                <th>name</th>
+                <th>notes</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>100</td>
+                <td>0</td>
+                <td>1</td>
+                <td>Alice</td>
+                <td>Great at programming</td>
+            </tr>
+            <tr class="update obsolete">
+                <td>101</td>
+                <td class="changed">103</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Always talk to alice</td>
+            </tr>
+            <tr class="delete obsolete">
+                <td>102</td>
+                <td>105</td>
+                <td>3</td>
+                <td>Eve</td>
+                <td>Listens to everyone's conversations</td>
+            </tr>
+            <tr class="update changed">
+                <td>103</td>
+                <td>0</td>
+                <td>2</td>
+                <td>Bob</td>
+                <td>Working very hard</td>
+            </tr>
+            <tr class="insert">
+                <td>104</td>
+                <td>0</td>
+                <td>4</td>
+                <td>Dave</td>
+                <td>Very promising new-hire</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Проблемы MVCC</h2>
+    <ul>
+        <li>MVCC работает идеально, когда мы пишем номер окончания отранзакции, но мы его заранее не знаем;</li>
+        <li>Надо как-то избавляться от "мертвых" кортежей.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Варианты реализации MVCC</h2>
+    <h3>Heap (PostgreSQL)</h3>
+    <ul class="compact" style="font-size: 90%">
+        <li>Все кортежи лежат в общей "куче".</li>
+        <li>Мертвые кортежи удаляются в фоне отдельным сборщиком мусора (AUTOVACUUM).</li>
+        <li>Фискация и откат транзакции имеют одинаковую стоимость.</li>
+    </ul>
+    <h3>Rollback segment (MySQL, Oracle)</h3>
+    <ul class="compact" style="font-size: 90%">
+        <li>В страницах таблицы лежат только актуальные данные.</li>
+        <li>Старые версии хранятся в журнале отката.</li>
+        <li>Не требуется сборщик мусора и более эффективное использование дискового пространства.</li>
+        <li>Долгий откат транзакции.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Блокировки</h2>
+    <div style="display: table; width: 100%; font-size: 60%">
+        <div style="display: table-cell; width: 50%; padding: 10px">
+            <pre><code class="sql">test=# BEGIN TRANSACTION
+test-# ISOLATION LEVEL REPEATABLE READ;
+BEGIN
+test=# SELECT balance
+test-# FROM accounts WHERE name = 'Alice';
+balance
+---------
+400
+(1 row)
+
+test=# UPDATE accounts
+test-# SET balance = balance + 100
+test-# WHERE name = 'Alice';
+UPDATE 1
+
+
+
+test=# COMMIT;
+COMMIT
+            </code></pre>
+        </div>
+        <div style="display: table-cell; padding: 10px">
+            <pre><code class="sql">test=# BEGIN TRANSACTION
+test-# ISOLATION LEVEL REPEATABLE READ;
+BEGIN
+test=# SELECT balance
+test-# FROM accounts WHERE name = 'Alice';
+balance
+---------
+400
+(1 row)
+
+
+
+
+
+test=# UPDATE accounts
+test-# SET balance = balance + 100
+test-# WHERE name = 'Alice';
+
+
+ERROR:  could not serialize access
+        due to concurrent update
+            </code></pre>
+        </div>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Блокировки</h2>
+    <div style="display: table; width: 100%; font-size: 60%">
+        <div style="display: table-cell; width: 50%; padding: 10px">
+            <pre><code class="sql">test=# BEGIN TRANSACTION
+test-# ISOLATION LEVEL REPEATABLE READ;
+BEGIN
+test=# SELECT balance
+test-# FROM accounts WHERE name = 'Alice';
+balance
+---------
+500
+(1 row)
+
+test=# UPDATE accounts
+test-# SET balance = balance + 100
+test-# WHERE name = 'Alice';
+UPDATE 1
+
+
+
+test=# ROLLBACK;
+ROLLBACK
+            </code></pre>
+        </div>
+        <div style="display: table-cell; padding: 10px">
+            <pre><code class="sql">test=# BEGIN TRANSACTION
+test-# ISOLATION LEVEL REPEATABLE READ;
+BEGIN
+test=# SELECT balance
+test-# FROM accounts WHERE name = 'Alice';
+balance
+---------
+500
+(1 row)
+
+
+
+
+
+test=# UPDATE accounts
+test-# SET balance = balance + 100
+test-# WHERE name = 'Alice';
+
+
+UPDATE 1
+test=# COMMIT;
+COMMIT
+            </code></pre>
+        </div>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Чем плохи &laquo;долгие&raquo; транзакции?</h2>
+    <ul>
+        <li>Риск отклонения транзакции: менеджер транзакций может найти несоответствие и отклонить транзакцию.</li>
+        <li>Для поддержки множества параллельных снапшотов надо много ресурсов.</li>
+        <li>Риск блокировки о соседнюю транзакцию (<code>lock_timeout</code>).</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Часть операций/примитивов не тразакционны</h2>
+    <ul>
+        <li><code>SEQUENCE</code></li>
+        <li><code>TRUNCATE TABLE</code></li>
+        <li><code>CREATE INDEX CONCURRENTLY</code></li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Двухфазный коммит (Two-phase commit)</h2>
+    <img src="2pc.jpeg" style="height: 75%">
+</section>
+
+<section class="slide">
+    <h2>Трехфазный коммит (Three-phase commit)</h2>
+    <img src="3pc.jpeg" style="height: 75%">
+</section>
+
+<section class="slide">
+    <h2 class="shout">Надёжность</h2>
+</section>
+
+<section class="slide">
+    <h2>Что может пойти не так?</h2>
+    <ul>
+        <li>Операционная система теряет кэш при потере питания</li>
+        <li class="next">Диск теряет кэш при потере питания</li>
+        <li class="next">Диск может выйти из строя</li>
+        <li class="next">Сервер может выйти из строя</li>
+        <li class="next">ДЦ может стать недоступен</li>
+    </ul>
+    <p class="next" style="width: 450px">Идея: каким-то образом на реплике поддерживать данные в состоянии как на
+        мастере, тогда в случае
+        выхода из строя мастера, можно сделать реплику мастером и продолжить работу.</p>
+    <img src="2001-09-11.webp"
+         style="width: 400px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
+</section>
+
+<section class="slide">
+    <h2>Варианты взаимодействия</h2>
+    <dl>
+        <dt>Мастер-слейв</dt>
+        <dd>
+            <p>Подчиненный сервер повторяет состояние главного и не может изменять данные самостоятельно.</p>
+            <p>Возможен так же вариант, когда данные на подчинённом сервере повторяются с задержкой.</p>
+        </dd>
+
+        <dt>Мастер-мастер</dt>
+        <dd>Оба сервера равнозначны и могут обрабатываь запросы как на чтение, так и на изменение данных.</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Варианты реализации</h2>
+    <dl>
+        <dt>Физическая</dt>
+        <dd>Передаётся информация о физическом изменении страниц базы данных.</dd>
+
+        <dt>Логическая</dt>
+        <dd>Передаётся информация об измененни записей базы данных.</dd>
+
+        <dt>Передача запросов</dt>
+        <dd>Передаётся информация о выполненных запросах.</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Гарантии репликации</h2>
+    <dl>
+        <dt>Синхронная</dt>
+        <dd>Мастер-сервер не подтверждает транзакцию до того, как реплика не подтвердит получение данных.</dd>
+
+        <dt>Асинхронная</dt>
+        <dd>Мастер-сервер не ждёт подтвержения получения данных от реплики.</dd>
+
+        <dt>Majority</dt>
+        <dd>Мастер-сервер ждёт подтвержения получения данных от N-реплик.</dd>
+
+        <dt>Семисинхронная (MySQL)</dt>
+        <dd>Мастер-сервер не подтверждает транзакцию до того, как "живые" реплики не подтвердят получение данных.</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Репликация &ldrushar; вид кластера</h2>
+    <p>Есть несколько вариантов организации кластера:</p>
+    <dl>
+        <dt>Общая память</dt>
+        <dd style="font-size: 80%">
+            <p>Кластер представляется как одна система (Single-System Image, SSI), то есть эквивалент операционной
+                системы для кластера в целом.</p>
+            <p>В результате нет необходимости в модификации существующих приложений — все это осуществляется
+                автоматически, прозрачно для приложений пообно SMP.</p>
+        </dd>
+        <dt>Общие диски</dt>
+        <dd style="font-size: 80%">
+            <p>Узлы кластера используют единую файловую систему.</p>
+            <p>Операционная система берет на себя координацию работы с файловой системой и ряд сервисных функций.</p>
+            <p>Приложение должно явно поддерживать работу в кластере.</p>
+        </dd>
+        <dt>Ничего общего</dt>
+        <dd style="font-size: 80%">
+            <p>Функции кластера целиком реализуются внутри приложения.</p>
+        </dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Физическая репликация</h2>
+    <h3>Общий принцип:</h3>
+    <ul>
+        <li>Главный сервер записывает изменения данных в журнал транзакций;</li>
+        <li>Подчиненный сервер копирует события журнала транзакций;</li>
+        <li>Подчиненный сервер воспроизводит изменения из журнала транзакций.</li>
+    </ul>
+    <h3>Плюсы:</h3>
+    <ul class="compact">
+        <li>Простота и надёжность;</li>
+        <li>Подчиненный сервер в точности соответвует мастер-серверу;</li>
+        <li>Практически отсутствуют накладные расходы на запись и CPU.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Физическая репликация</h2>
+    <h3>Минусы:</h3>
+    <ul class="compact" style="font-size: 90%">
+        <li>Если данные на мастере были испорченны из-за сбоев RAM, то на подчинённом сервере так же будут испорченные
+            данные;
+        </li>
+        <li>На реплике не может быть локальных изменений схемы данных;</li>
+        <li>Обновление индексов и VACUUM так же попадают в журнал транзакций, это порождает избыточное сетевое общение;
+        </li>
+        <li>Реплика может временно отставать, если на подчинённом сервере выполняется запрос на длительное чтение
+            данных;
+        </li>
+        <li>На подчинённом сервере должна быть та же версия PostgreSQL, что и на мастере;</li>
+        <li>Не возможна мастер-мастер репликация;</li>
+        <li>VACUUM на мастере может удалить еще используемые данные на подчинённом.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Логическая репликация</h2>
+    <h3>Плюсы:</h3>
+    <ul class="compact">
+        <li>Более компактный обмен данными;</li>
+        <li>Если данные на мастере были испорченны из-за сбоев RAM, то репликация остановится;</li>
+        <li>На мастере и подчинённом сервере могут быть разные версии СУБД;</li>
+        <li>На мастере и подчинённом сервере можно использовать разную схему данных;</li>
+        <li>Потенциально возможна мастер-мастер репликация.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Логическая репликация</h2>
+    <h3>Минусы:</h3>
+    <ul class="compact">
+        <li>Более высокая нагрузка на подчинённый сервер;</li>
+        <li>Надо крайне аккуратно работать со схемой данных;</li>
+        <li>Нет хорошего решения проблемы репликации DDL-запросов.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Синхронная vs асинхронная репликация?</h2>
+    <h3>CAP-теорема</h3>
+    <p>В распределенной системе возможно выбрать только 2 из 3-х свойств:</p>
+    <ul>
+        <li><b>C</b>onsistency — согласованность. Каждое чтение даст вам самую последнюю запись.</li>
+        <li><b>A</b>vailability — доступность. Каждый узел (не упавший) всегда успешно выполняет запросы (на чтение и
+            запись).
+        </li>
+        <li><b>P</b>artition tolerance — устойчивость к распределению. Даже если между узлами нет связи, они продолжают
+            работать независимо друг от друга.
+        </li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Синхронная vs асинхронная репликация?</h2>
+    <h3>CAP-теорема</h3>
+    <p>На самом деле, если у нас больше одного сервера обрабатывающего запросы, то мы уже выбрали <b>P</b>.
+    <p>
+    <p>Поэтому выбирать можем только между <b>A</b> и <b>C</b>.</p>
+    <ul>
+        <li>Синхронная репликация - согласованность (CP)</li>
+        <li>Асинхронная репликация - доступность (AP)</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Что происходит после поломки мастера?</h2>
+    <ul>
+        <li>Ручное переключение мастера</li>
+        <li>Автоматическое переключение (failover)</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Автоматическое переключение</h2>
+    <p>Необходимо выбрать новый мастер и реплики могут сделать это самостоятельно (RAFT). Для достижения консенсуса
+        требуется <span class="math">`N/2+1`</span> доступных реплик.</p>
+
+</section>
+
+<section class="slide">
+    <h2>Split-brain</h2>
+    <ul>
+        <li>Старый мастер потерял сетевую связанность с остальным кластером</li>
+        <li>Был выбран новый мастер</li>
+        <li>Часть пользовательских запросов продолжил обрабатывать старый мастер, часть новый</li>
+        <li>Имеем два набора возможно противоречивых данных</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Fencing</h2>
+    <p>Защитный механизм защищающий от split-brain. Мастер потеряв связанность с остальным кластером, должен через
+        заданное время перестать считать себя мастером.</p>
+    <p>С другой стороны, возможно он действительно остался один и перестав обрабатывать запросы произошел полный отказ
+        СУБД.</p>
+    <p>И кто же нас спасёт тогда?</p>
+    <ul class="compact">
+        <li>Внешний координатор</li>
+        <li>Живой человек</li>
+        <li>Система находящаяся в стороне от кластера и управляющая им</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2 class="shout">Шардирование</h2>
+</section>
+
+<section class="slide">
+    <h2>Шардирование</h2>
+    <p>Если данных больше чем может поместиться на одном сервере или недостаточно производительности, то нужно
+        шардировать базу.</p>
+    <dl>
+        <dt>Шардирование (шардинг) баз данных</dt>
+        <dd>Метод распределения данных между несколькими отдельными частями — шардами. Каждый шард располагается на
+            отдельном сервере или группе серверов, что позволяет выполнять запросы параллельно.
+        </dd>
+
+        <dt>Ключ шардирования</dt>
+        <dd>Это столбец (или несколько столбцов) в данных, по которому система определяет, в какой шард попадёт
+            конкретная строка.
+        </dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Цели шардирования</h2>
+    <ul>
+        <li>Горизонтальное масштабирование при росте данных и числа запросов.</li>
+        <li>Сокращение времени отклика за счёт параллельной обработки.</li>
+        <li>Повышение доступности — отказ одного шарда не выводит из строя всю систему.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Проблемы шардирования</h2>
+    <ul>
+        <li>Если запрос затрагивает несколько шардов, то MapReduce: выполнить один запрос на всех шардах, после чего
+            аггрегировать ответы.
+        </li>
+        <li>Изменение данных на нескольких шардах, это двухфазный коммит</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Решардинг</h2>
+    <p>Если данных становится так много, что они не помещаются на имеющиеся шарды, то добавляют еще - это называется
+        решардингом.</p>
+    <p>Для упрощения этого процесса есть приемы, например, виртуальное шардирование.</p>
+</section>
+
+<section class="slide">
+    <h2>Решардинг</h2>
+    <ul class="compact">
+        <li>Определяется N бакетов, где N может быть десятки тысяч</li>
+        <li>Бакеты распределяются между шардами поровну</li>
+        <li>При добавлении нового шарда бакеты перераспределяются</li>
+        <li>Требуется отдельный компонент - роутер, который хранит информацию о соответствии бакета физическому шарду
+        </li>
+    </ul>
+    <img src="vshard.gif" style="width: 500px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
+</section>
+
+<section class="slide">
+    <h2 class="shout">Итоги</h2>
+</section>
+
+<section class="slide">
+    <h2>Так какую базу данных выбрать?</h2>
+    <p>Универсального ответа нет, надо смотреть на< характер данных и профиль нагрузкиЖ</p>
+    <ul>
+        <li>Для OLTP-нагрузки, если время доступа не критично и не требуется шардирование я выбираю PostgreSQL</li>
+        <li>Если время доступа критично, но сами данные не критичны, то in-memory решение, например, Redis</li>
+        <li>Если данных очень много и основной профиль нагрузки на чтение - чтение по ключу - MongoDB</li>
+    </ul>
+    <div class="important"><p>Все рекомендации субъективны и в основном обусловлены личным опытом.</p></div>
+</section>
+
+<section class="slide">
+    <h2>Ссылки</h2>
+    <ul>
+        <li><a href="https://github.com/sirupsen/napkin-math">https://github.com/sirupsen/napkin-math</a></li>
+        <li><a href="https://github.com/mtrempoltsev/yandex_system_design/blob/main/db.md">https://github.com/mtrempoltsev/yandex_system_design/blob/main/db.md</a>
+        </li>
+        <li><a href="https://tikv.org/deep-dive/key-value-engine/b-tree-vs-lsm/">https://tikv.org/deep-dive/key-value-engine/b-tree-vs-lsm/</a>
+        </li>
+        <li><a href="https://habr.com/ru/companies/vk/articles/740108/">https://habr.com/ru/companies/vk/articles/740108/</a>
+        </li>
+        <li><a href="https://habr.com/ru/companies/vk/articles/436916/">https://habr.com/ru/companies/vk/articles/436916/</a>
+        </li>
+        <li><a href="https://habr.com/ru/articles/181584/">https://habr.com/ru/articles/181584/</a></li>
+    </ul>
+</section>
