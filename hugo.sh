@@ -18,3 +18,4 @@ if [ "${HUGO}" = "" ]; then
   HUGO=".build/hugo_${HUGO_VER}_linux_amd64/hugo"
 fi
 ${HUGO} $@
+find public -iname .git -delete
