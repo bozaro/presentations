@@ -1,0 +1,20 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+  - name: build
+    image: alpine
+    commands:
+      - ./hugo.sh
+  - name: publish
+    image: plugins/gh-pages
+    settings:
+      username:
+        from_secret: github_login
+      password:
+        from_secret: github_token
+      pages_directory: public/
+    when:
+      branch:
+        - master
