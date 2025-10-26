@@ -3,18 +3,32 @@ type: docker
 name: default
 
 steps:
+  - name: docker
+    image: plugins/docker
+    settings:
+      context: .jenkins
+      repo: docker.bozaro.ru/ci/${DRONE_REPO}
+      cache_from: docker.bozaro.ru/ci/${DRONE_REPO}
+      dockerfile: .jenkins/Dockerfile
+      registry: docker.bozaro.ru
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
   - name: build
-    image: alpine
+    image: docker.bozaro.ru/ci/${DRONE_REPO}
     commands:
       - ./hugo.sh
+      - ghp-import -n public
   - name: publish
-    image: plugins/gh-pages
-    settings:
-      username:
+    image: docker.bozaro.ru/ci/${DRONE_REPO}
+    commands:
+      - git push -qf https://$${GITHUB_LOGIN}:$${GITHUB_TOKEN}@github.com/${DRONE_REPO}.git gh-pages
+    environment:
+      GITHUB_LOGIN:
         from_secret: github_login
-      password:
+      GITHUB_TOKEN:
         from_secret: github_token
-      pages_directory: public/
     when:
       branch:
         - master
