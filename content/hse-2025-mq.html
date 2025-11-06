@@ -1,18 +1,14 @@
 ---
 title: Очереди сообщений (2025)
 ---
-<section class="slide" xmlns="http://www.w3.org/1999/html">
-    <h2 class="shout">Зачем нужны очереди сообщений?</h2>
-</section>
-
 <section class="slide">
-    <pre><code class="md,mark">- Часто какую-то крупную задачу нужно выполнить за один шаг. В БД часто используют транзакции.
-- В случае использования нескольких БД нужны распределённые транзакции.
-- Согласованность требует согласованного восстановления, что не всегда желательно или хотя бы возможно.
-- Очереди позволяют "отложить" какое-то действие, чтобы оно после пришло в согласованное состояние.
-
-- Работу с очередью можно сделать двумя способами: pub/sub (push), request/response (pull)
-    </code></pre>
+    <h2>Зачем нужны очереди сообщений?</h2>
+    <ul>
+        <li>Часто какую-то крупную задачу нужно выполнить за один шаг. В БД часто используют транзакции.</li>
+        <li>В случае использования нескольких БД нужны распределённые транзакции.</li>
+        <li>Согласованность требует согласованного восстановления, что не всегда желательно или хотя бы возможно.</li>
+        <li>Очереди позволяют "отложить" какое-то действие, чтобы оно после пришло в согласованное состояние.</li>
+    </ul>
 </section>
 
 <section class="slide">
@@ -145,6 +141,16 @@ title: Очереди сообщений (2025)
 </section>
 
 <section class="slide">
+    <h2>Идемпотентность</h2>
+    <dl>
+        <dt>Идемпотентность</dt>
+        <dd>Свойство объекта или операции при повторном применении операции к объекту давать тот же результат, что и при
+            первом
+        </dd>
+    </dl>
+</section>
+
+<section class="slide">
     <h2 class="shout">Топологии очередей</h2>
 </section>
 
@@ -231,4 +237,334 @@ title: Очереди сообщений (2025)
         </tbody>
     </table>
     <p>Проблему надёжности для схемы с несколькими брокерами можно решить через репликацию.</p>
+</section>
+
+<section class="slide">
+    <h2 class="shout">Видеоплатформа</h2>
+</section>
+
+<section class="slide">
+    <h2>Загрузка нового видео пользователем</h2>
+    <ul>
+        <li>Проверить видео модератором</li>
+        <li>Если проверка пройдена, то:
+            <ul>
+                <li>Закодировать с разным разрешением</li>
+                <li>Обновить поисковые индексы</li>
+                <li>Обновить ленты подписчиков</li>
+            </ul>
+        </li>
+    </ul>
+    <img src="sync.png" style="width: 400px; position: absolute; bottom: 50px; right: 50px; z-index: -1">
+</section>
+
+<section class="slide">
+    <h2>Что может пойти не так?</h2>
+    <ul>
+        <li>Сервис модерации не доступен</li>
+        <li>Прошли модерацию, но упал API Gateway</li>
+        <li>Прошли модерацию, но недоступен Encoder, Indexer или User Feeds</li>
+        <li>Запросы приходят чаще, чем один и больше сервисов способны их обработать</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Что делать?</h2>
+    <p>На стороне API Gateway:</p>
+    <ul>
+        <li>Входящий запрос сохранять в таблицу в виде запросов в сервисы, которые нужно сделать</li>
+        <li>После успешного запроса в сервис удалять из базы соответствующую запись</li>
+        <li>Периодически повторять запросы, которые не были успешно выполнены</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Архитектура с использованием очередей</h2>
+    <div style="text-align: center"><img src="async.png" style="width: 100%"></div>
+</section>
+
+<section class="slide">
+    <h2>Архитектура с использованием очередей</h2>
+    <img src="load.png" style="width: 40%; float: right">
+    <ul>
+        <li>Убрали состояние из API Gateway</li>
+        <li>Получили гарантии доставки</li>
+        <li>Добавили эластичность</li>
+        <li>Уменьшили связанность</li>
+        <li>Сократили задержки</li>
+        <li>Избежали ситуации когда один сервис может перегрузить другой сервис</li>
+        <li>Отказались от повторов в случае ошибок</li>
+        <li>Появилась возможность легко горизонтально масштабироваться</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2 class="shout">Популярные очереди сообщений</h2>
+</section>
+
+<section class="slide">
+    <h2>Популярные очереди сообщений</h2>
+    <div style="display: flex">
+        <div style="flex: 50%">
+            <h3>On-premises</h3>
+            <ul class="compact">
+                <li>RabbitMQ</li>
+                <li>Apache Kafka</li>
+                <li>NATS</li>
+                <li>ZeroMQ</li>
+            </ul>
+            <h3>На основе СУБД</h3>
+            <ul class="compact">
+                <li>PgQueue</li>
+                <li>Redis</li>
+            </ul>
+        </div>
+        <div style="flex: 50%">
+            <h3>Облачные</h3>
+            <ul class="compact">
+                <li>Amazon SQS</li>
+                <li>Yandex MQ</li>
+                <li>CloudAMQP (RabbitMQ)</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>RabbitMQ</h2>
+    <ul>
+        <li>pub/sub брокер</li>
+        <li>Протоколы: AMQP, MQTT, STOMP</li>
+        <li>Приоритеты, отложенные задачи</li>
+        <li>Сильно деградирует под нагрузкой</li>
+        <li>Доставленные сообщения удаляются</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>RabbitMQ</h2>
+    <div style="text-align: center"><img src="rabbit.png" style="width: 85%"></div>
+</section>
+
+<section class="slide">
+    <h2>RabbitMQ</h2>
+    <ul class="compact">
+        <li>Exchange могут соединяться с другими Exchange или с собственно очередями (queue) образуя маршруты (route)
+        </li>
+        <li>Очереди могут хранить сообщения только в памяти или обеспечивать их сохранность (durable)</li>
+        <li>Producer шлет сообщения в Exchange, пройдя по маршруту сообщение оказывается в очереди</li>
+        <li>Потребитель (consumer) подписывается на конкретную очередь и начинает получать сообщения из нее</li>
+        <li>Для очереди можно установить максимальный размер или TTL для сообщений</li>
+        <li>Очереди могут реплицироваться (Quorum Queues)</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>RabbitMQ</h2>
+    <h3>Типы Exchange</h3>
+    <dl>
+        <dt>Direct</dt>
+        <dd style="font-size: 80%">Прямая отправка сообщений в одну или несколько очередей с совпадающим значением ключа
+            маршрутизации (routing key)
+        </dd>
+
+        <dt>Topic</dt>
+        <dd style="font-size: 80%">Сообщение отправляется в очереди по значению ключа маршрутизации (routing key),
+            заданного по шаблону
+        </dd>
+
+        <dt>Fanout</dt>
+        <dd style="font-size: 80%">Все сообщения отправляются во все очереди независимо от ключа маршрутизации</dd>
+
+        <dt>Headers</dt>
+        <dd style="font-size: 80%">Маршрутизация по атрибутам, заданным в заголовке сообщения</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Масштабирование RabbitMQ</h2>
+    <p>Масштабирование в основном вертикальное, но возможно очереди распределить между узлами</p>
+    <img src="rabbitmq-sharding.png" style="width: 400px; position: absolute; bottom: 70px; right: 50px; z-index: -1">
+</section>
+
+<section class="slide">
+    <h2>Kafka</h2>
+    <ul class="compact">
+        <li>Производительная</li>
+        <li>Хорошо горизонтально масштабируется</li>
+        <li>Оптимизирована под пакетную обработку</li>
+        <li>Гарантии последовательной обработки</li>
+        <li>Отсутствие приоритетов сообщений</li>
+        <li>Возможность повторного получения сообщений</li>
+        <li>Ограниченное количество потребителей</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Kafka</h2>
+    <div style="text-align: center"><img src="kafka.png" style="width: 85%"></div>
+</section>
+
+<section class="slide">
+    <h2>Kafka</h2>
+    <ul class="compact">
+        <li>Логический топик делится на партиции</li>
+        <li>Разные партиции могут находится на разных серверах</li>
+        <li>Для продюсера есть стратегии записи в партиции по кругу (round robin) и по хешу от ключа сообщения, таким
+            образом если у сообщения есть ключ, то сообщения с одним ключом попадают в одну партицию
+        </li>
+        <li>Партиции реплицируются между узлами кластера</li>
+        <li>Потребители обьединяются в группы (consumer group), гарантируется, что из одной партиции читает один член
+            группы
+        </li>
+        <li>Разные группы потребителей могут читать одни и те же сообщения</li>
+        <li>У каждого члена группы свое смещение (offset) в партиции, которое указывает на последнее полученное
+            сообщение
+        </li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Масштабирование Kafka</h2>
+    <img src="kafka-rep.png" style="width: 400px; float: right">
+    <ul class="compact">
+        <li>Кластер состоит из узлов - брокеров</li>
+        <li>Партиция - основа горизонтальной масштабируемости</li>
+        <li>Партиции распределяются между брокерами с указанным replication factor</li>
+        <li>Партиция физически состоит из файлов-сегментов, которые реплицируются между брокерами</li>
+        <li>У каждой партиции есть лидер</li>
+        <li>Клиенты (продьюсеры и потребители) получают информацию о том, кто лидер партиции от любого брокера в
+            кластере
+        </li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Что выбрать?</h2>
+    <h3>Коммуникация между сервисами</h3>
+    <ul>
+        <li>Высокая пропускная способность, масштабируемость</li>
+        <li>Потеря сообщений некритична</li>
+    </ul>
+    <p>NATS</p>
+
+    <h3>Сложный роутинг</h3>
+    <p>А точно нужно?</p>
+
+    <h3>Во всех остальных случаях</h3>
+    <p>Kafka</p>
+</section>
+
+<section class="slide">
+    <h2>Dead letter queue (repair queue)</h2>
+    <img src="repair.png" style="width: 300px; float: right">
+    <ul>
+        <li>Отбросить</li>
+        <li>Повторить с номера 6</li>
+        <li>Переместить в другую очередь</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>CQRS</h2>
+    <h3>Command and Query Responsibility Segregation</h3>
+    <p>Подход к проектированию системы, который разделяет операции чтения и записи данных на две отдельные модели.</p>
+    <ul>
+        <li><b>Queries</b> &dash; методы, которые возвращают результат, не изменяя состояние объекта</li>
+        <li><b>Commands</b> &dash; методы, которые изменяют состояние объекта</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>CQRS</h2>
+    <div style="text-align: center"><img src="no-cqrs.png" style="width: 80%"></div>
+</section>
+
+<section class="slide">
+    <h2>CQRS</h2>
+    <ul>
+        <li>Сложное взаимодействие</li>
+        <li>Много запросов</li>
+    </ul>
+    <img src="no-cqrs.png" style="width: 450px; position: absolute; bottom: 70px; right: 50px; z-index: -1">
+</section>
+
+<section class="slide">
+    <h2>CQRS</h2>
+    <div style="text-align: center"><img src="cqrs.png" style="width: 80%"></div>
+</section>
+
+<section class="slide">
+    <h2>CQRS</h2>
+    <ul>
+        <li>Простота</li>
+        <li>Производительность</li>
+        <li>Масштабирование</li>
+    </ul>
+    <img src="cqrs.png" style="width: 450px; position: absolute; bottom: 70px; right: 50px; z-index: -1">
+</section>
+
+<section class="slide">
+    <h2>Transactional outbox</h2>
+    <img src="tr-out-1.png" style="width: 300px; float: right">
+    <ol>
+        <li>Получили сообщение</li>
+        <li>Создали во внутренней базе запись со статусом проверки</li>
+        <li>Проверка прошла</li>
+        <li>Отправили сообщение в следующую очередь</li>
+        <li>Удалили запись</li>
+    </ol>
+</section>
+
+<section class="slide">
+    <h2>Transactional outbox</h2>
+    <img src="tr-out-2.png" style="width: 300px; float: right">
+    <ol>
+        <li>Получили сообщение</li>
+        <li>Создали во внутренней базе запись со статусом проверки</li>
+        <li>Проверка прошла</li>
+        <li>В транзакции удалили запись и сделали запись в другой таблице</li>
+        <li>Отдельный процесс читает вторую таблицу, отправляет сообщения и удаляет записи (at least once)</li>
+    </ol>
+</section>
+
+<section class="slide">
+    <h2>Диагностика очередей</h2>
+    <h3>Мониторинг очередей</h3>
+    <ol class="compact">
+        <li>Количество необработанных сообщений. Нормальное состояние - очередь пустая</li>
+        <li>Время
+            <ul>
+                <li>Полное время обработки сообщения (QoS)</li>
+                <li>Время обработки потребителем</li>
+            </ul>
+        <li>Количество повторов и отказов</li>
+        <li>Количество сообщений</li>
+    </ol>
+    <h3>Логирование сообщений</h3>
+    <p>В крайнем случае можно будет восстановить данные распарсив логи.</p>
+</section>
+
+<section class="slide">
+    <h2>Проектируем ленту новостей</h2>
+    <ul>
+        <li>Пользователи могут размещать посты (текст и медиафайлы)</li>
+        <li>Другие пользователи, подписанные на этого пользователя должны увидеть в своей ленте новостей эти посты</li>
+        <li>Лента формируется от новых постов к старым</li>
+        <li>Когда пользователь размещает новый пост кго подписчики должны получать push-уведомление</li>
+    </ul>
+    <h3>Логирование сообщений</h3>
+    <p>В крайнем случае можно будет восстановить данные распарсив логи.</p>
+</section>
+
+<section class="slide">
+    <h2>Ссылки</h2>
+    <ul>
+        <li><a href="https://github.com/mtrempoltsev/yandex_system_design/blob/main/mq.md">https://github.com/mtrempoltsev/yandex_system_design/blob/main/mq.md</a>
+        </li>
+        <li><a href="https://www.cloudamqp.com/blog/reasons-you-should-switch-to-quorum-queues.html">https://www.cloudamqp.com/blog/reasons-you-should-switch-to-quorum-queues.html</a>
+        </li>
+        <li><a href="https://www.cloudamqp.com/blog/reasons-you-should-switch-to-quorum-queues.html">https://www.cloudamqp.com/blog/reasons-you-should-switch-to-quorum-queues.html</a>
+        </li>
+    </ul>
 </section>
