@@ -1,0 +1,355 @@
+<!doctype html><html lang=ru><head><title>Кратко про системы контроля версий (2024)</title><meta charset=utf-8><meta http-equiv=x-ua-compatible content="ie=edge"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=generator content="Hugo 0.119.0"><link rel=icon href=../favicon.png><link rel=stylesheet href=../shower/themes/ribbon/styles/screen-16x10.css><link rel=stylesheet href=../css/style.css><link rel=stylesheet href=../highlight.js/styles/xcode.min.css><script src=../jquery/jquery.min.js></script>
+<script src=../jquery-qrcode/jquery.qrcode.min.js></script></head><body class="shower list no-math"><header class=caption><h1>Кратко про системы контроля версий (2024)</h1><p>Навроцкий Артем</p></header><section class="slide clear" style=padding:0 id=cover><h2 class=shout>Кратко про системы контроля версий (2024)</h2><div class="place bottom right" style=padding:50px>Навроцкий Артем</div></section><section class=slide xmlns=http://www.w3.org/1999/html><h2 class=shout>Общая информация</h2></section><section class=slide><h2>Определение из
+<a href=https://ru.wikipedia.org/wiki/%D0%A1%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D1%83%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F_%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F%D0%BC%D0%B8>Wikipedia</a></h2><dl><dt>Version Control System,</dt><dd>программное обеспечение для облегчения работы с изменяющейся информацией. Система управления версиями
+позволяет хранить несколько версий одного и того же документа, при необходимости возвращаться к более ранним
+версиям, определять, кто и когда сделал то или иное изменение, и многое другое.</dd></dl></section><section class=slide><h2>Какие проблемы решаются?</h2><ul><li>Фиксация промежуточного результата</li><li>Совместная работа</li><li>Источник правды</li><li>Воспроизводимость сборки</li><li>Разделение прав доступа</li></ul></section><section class=slide><h2>Фиксация промежуточного результата</h2><figure><blockquote><p>Как съесть слона? По кусочку!</p></blockquote></figure><p>Система управления версиями позволяет хранить несколько версий одного и того же документа, при необходимости
+возвращаться к более ранним версиям, определять, кто и когда сделал то или иное изменение, и многое другое.</p></section><section class=slide><h2>Совместная работа и источник правды</h2><p>На системе управления версиями всегда есть самая свежая версия кода, которая может использоваться как эталон для
+разработчиков. Так же на ней можно запускать автоматизированные сборки.</p></section><section class=slide><h2>Воспроизводимость сборки</h2><p>Можно получить сборку от более старой версии исходного кода и, к примеру, проверить: воспроизводится ли на ней
+недавно обнаруженная проблема.</p></section><section class=slide><h2>Разделение прав доступа</h2><p>На стороне системы управления версиями можно принимать решения по разрешению и запрету тех или иных действий.</p></section><section class=slide><h2>Системы контроля версий</h2><h3>Snapshot-based</h3><ul class=compact><li><a href=https://www.nongnu.org/cvs/>CVS</a>, 1990 год (Client-Server, Merge)</li><li>Visual SourceSafe, 1995 год (Shared Folder, Merge or lock)</li><li><a href=https://www.perforce.com/products/helix-core>Perforce</a>, 1995 год (Client-Server and Distributed, Merge or lock)</li><li><a href=https://subversion.apache.org/>Subversion</a>, 2000 год (Client–server, Merge or lock)</li><li><a href=https://www.mercurial-scm.org/>Mercurial</a>, 2005 год (Distributed, Merge)</li><li><a href=https://git-scm.com/>Git</a>, 2005 год (Distributed, Merge)</li></ul><h3>Patch-based</h3><ul class=compact><li><a href=https://darcs.net/>Darcs</a>, 2003 год (Haskel)</li><li><a href=https://pijul.org/>Pijul</a>, 2016 год (Rust)</li></ul><img src=programmer-2001-02.jpg style=width:200px;position:absolute;bottom:50px;right:50px;z-index:-1></section><section class=slide><h2 class=shout>Базовый сценарий</h2></section><section class=slide><h2>Файл правит только один</h2><div style=width:80%><pre class=mermaid>sequenceDiagram
+            actor A as Клиент
+            participant B as Сервер
+            A ->>+ B: Дай последнюю версию проекта!
+            B -->>- A: Перекидывает архив с проектом
+            A ->>+ B: Я начинаю править файл foo.py!
+            B -->> A: Помечает файл заблокированным и отдаёт последнюю версию
+            A ->> B: Я заливаю изменения!
+            B -->>- A: Сохраняет у себя файл и снимает блокировку
+        </pre></div><img src=p4.png style=width:250px;position:absolute;bottom:50px;right:50px;z-index:-1></section><section class=slide><h2>Файл правит только один</h2><h3>Системы контроля версий</h3><p>Perforce, Visual SourceSafe</p><h3>Плюсы</h3><ul class=compact><li>Простая метафора</li></ul><h3>Минусы</h3><ul class=compact><li>Надо заранее знать, что мы будем менять</li><li>Начало правки так же берёт последнюю версию файла</li><li>Обновление одного файла в середине процесса ломает всё</li><li>Не спасает от поломок при слиянии</li><li>Без интеграции работа превращается в пытку</li></ul></section><section class=slide><h2>Конфликты решаются потом</h2><div style=width:50%><pre class=mermaid>sequenceDiagram
+            actor A as Клиент
+            participant B as Сервер
+            A ->>+ B: Дай последнюю версию проекта!
+            B -->>- A: Перекидывает архив с проектом
+            A ->> A: Правит файл foo.py!
+            A ->>+ B: Я заливаю изменения!
+            B -->>- A: Принимает изменения
+            A ->>+ B: Дай изменения проекта!
+            B -->>- A: Отправляет изменения от коллег
+        </pre></div><img src=subversion.png style=width:200px;position:absolute;bottom:50px;right:50px;z-index:-1></section><section class=slide><h2>Конфликты решаются потом</h2><h3>Системы контроля версий</h3><p>CVS, Subversion</p><h3>Плюсы</h3><ul class=compact><li>Наличие блокировок приводит к работе а-ля Perforce</li></ul><h3>Минусы</h3><ul class=compact><li>Локальные изменения не версионируются</li><li>Начало правки так же берёт последнюю версию файла</li><li>Ветки надо делать заранее</li></ul></section><section class=slide><h2>Распределённая система</h2><h3>Общий алгоритм</h3><ol class=compact><li>Забираем локально копию репозитория</li><li>Начинаем ветку от любой версии</li><li>Правим локально файлы и фиксируем результат</li><li>Забираем свежие изменения</li><li>Сливаем изменения с эталонной веткой</li><li>Отправляем ветку на удалённую копию</li></ol><img src=git.png style=width:250px;position:absolute;bottom:50px;right:50px;z-index:-1></section><section class=slide><h2>Распределённая система</h2><h3>Системы контроля версий</h3><p>Git, Mercurial</p><h3>Плюсы</h3><ul class=compact><li>Локально можно хранить историю временных изменений</li><li>Можно как угодно локально менять историю</li><li>На сборочном сервере можно собирать данные из временных веток</li></ul><h3>Минусы</h3><ul class=compact><li>В графе коммитов по номерам версий нельзя сказать, что было раньше</li><li>Без возможности сделать merge, просто увеличивает шансы на конфликт</li><li>Нужно локально держать всю историю изменений</li></ul></section><section class=slide><h2>Subversion vs Git</h2><h3>Subversion</h3><ul class=compact><li>Более простой сценарий работы</li><li>Есть возможность использовать блокировки</li><li>Ветки &mdash; боль</li></ul><h3>Git</h3><ul class=compact><li>Надо уметь пользоваться</li><li>Более комфортная работа с ветками</li><li>Без возможности сделать merge, не даёт никаких преимуществ</li></ul></section><section class=slide><h2 class=shout>Как устроен Git?</h2></section><section class=slide><h2>Собираем Git репозиторий на Python</h2><figure><blockquote><p>Любая достаточно развитая технология неотличима от магии.</p></blockquote><figcaption>Третий закон Артура Кларка</figcaption></figure><p>Git имеет очень простую внутреннюю структуру.</p><p>Для иллюстрации соберём небольшой Git-репозиторий используя только стандартную библиотеку Python.</p><img src=rabbit.jpg style=height:250px;position:absolute;bottom:50px;right:50px;z-index:-1></section><section class=slide><h2>Минимальный репозиторий</h2><span style=font-size:75%><figure><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#177500>#!/usr/bin/env python3</span>
+</span></span><span style=display:flex><span><span style=color:#177500># -*- coding: utf8 -*-</span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>import</span> <span style=color:#000>os.path</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>def</span> <span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>: <span style=color:#a90d91>str</span>):
+</span></span><span style=display:flex><span>    <span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>makedirs</span>(<span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>path</span><span style=color:#000>.</span><span style=color:#000>join</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>&#34;.git/refs&#34;</span>), <span style=color:#1c01ce>0o755</span>, <span style=color:#a90d91>True</span>)
+</span></span><span style=display:flex><span>    <span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>makedirs</span>(<span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>path</span><span style=color:#000>.</span><span style=color:#000>join</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>&#34;.git/objects&#34;</span>), <span style=color:#1c01ce>0o755</span>, <span style=color:#a90d91>True</span>)
+</span></span><span style=display:flex><span>    <span style=color:#000>head</span> <span style=color:#000>=</span> <span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>path</span><span style=color:#000>.</span><span style=color:#000>join</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>&#34;.git/HEAD&#34;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>if</span> <span style=color:#000>not</span> <span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>path</span><span style=color:#000>.</span><span style=color:#000>exists</span>(<span style=color:#000>head</span>):
+</span></span><span style=display:flex><span>        <span style=color:#a90d91>with</span> <span style=color:#a90d91>open</span>(<span style=color:#000>head</span>, <span style=color:#c41a16>&#34;wt&#34;</span>) <span style=color:#a90d91>as</span> <span style=color:#000>f</span>:
+</span></span><span style=display:flex><span>            <span style=color:#000>f</span><span style=color:#000>.</span><span style=color:#000>write</span>(<span style=color:#c41a16>&#34;ref: refs/heads/master&#34;</span>)
+</span></span></code></pre></div></figure></span><p>Минимальный репозиторий должен содежрать директории <code>refs/</code>, <code>objects/</code> и файл
+<code>HEAD</code>.</p></section><section class=slide><h2>Объекты репозитория</h2><span style=font-size:75%><figure><figcaption><a href=../hse-2023-vcs/repo/object.py>object.py</a>:</figcaption><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#177500># -*- coding: utf8 -*-</span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>import</span> <span style=color:#000>hashlib</span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>import</span> <span style=color:#000>os.path</span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>import</span> <span style=color:#000>zlib</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>def</span> <span style=color:#000>write</span>(<span style=color:#a90d91>dir</span>: <span style=color:#a90d91>str</span>, <span style=color:#000>kind</span>: <span style=color:#a90d91>str</span>, <span style=color:#000>data</span>: <span style=color:#a90d91>bytes</span>):
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>object</span> <span style=color:#000>=</span> <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;</span><span style=color:#c41a16>%s</span><span style=color:#c41a16> </span><span style=color:#c41a16>%d</span><span style=color:#c41a16>\0</span><span style=color:#c41a16>%s</span><span style=color:#c41a16>&#34;</span> <span style=color:#000>%</span> (<span style=color:#000>kind</span><span style=color:#000>.</span><span style=color:#000>encode</span>(<span style=color:#c41a16>&#34;utf-8&#34;</span>), <span style=color:#a90d91>len</span>(<span style=color:#000>data</span>), <span style=color:#000>data</span>)
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>hash</span> <span style=color:#000>=</span> <span style=color:#000>hashlib</span><span style=color:#000>.</span><span style=color:#000>sha1</span>(<span style=color:#a90d91>object</span>)<span style=color:#000>.</span><span style=color:#000>hexdigest</span>()
+</span></span><span style=display:flex><span>    <span style=color:#000>path</span> <span style=color:#000>=</span> <span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>path</span><span style=color:#000>.</span><span style=color:#000>join</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>&#34;.git/objects/</span><span style=color:#c41a16>%s</span><span style=color:#c41a16>/</span><span style=color:#c41a16>%s</span><span style=color:#c41a16>&#34;</span> <span style=color:#000>%</span>
+</span></span><span style=display:flex><span>                        (<span style=color:#a90d91>hash</span>[:<span style=color:#1c01ce>2</span>], <span style=color:#a90d91>hash</span>[<span style=color:#1c01ce>2</span>:]))
+</span></span><span style=display:flex><span>    <span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>makedirs</span>(<span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>path</span><span style=color:#000>.</span><span style=color:#000>dirname</span>(<span style=color:#000>path</span>), <span style=color:#1c01ce>0o755</span>, <span style=color:#a90d91>True</span>)
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>with</span> <span style=color:#a90d91>open</span>(<span style=color:#000>path</span>, <span style=color:#c41a16>&#34;wb&#34;</span>) <span style=color:#a90d91>as</span> <span style=color:#000>f</span>:
+</span></span><span style=display:flex><span>        <span style=color:#000>f</span><span style=color:#000>.</span><span style=color:#000>write</span>(<span style=color:#000>zlib</span><span style=color:#000>.</span><span style=color:#000>compress</span>(<span style=color:#a90d91>object</span>, <span style=color:#000>zlib</span><span style=color:#000>.</span><span style=color:#000>Z_BEST_COMPRESSION</span>))
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>print</span>(<span style=color:#a90d91>hash</span>, <span style=color:#000>kind</span>)
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>return</span> <span style=color:#a90d91>hash</span>
+</span></span></code></pre></div></figure></span><p>Объекты можно сложить в директорию <code>objects/</code>. Имя объекта &mdash; его SHA-1 хэш (160 бит).</p></section><section class=slide><h2>Объекты репозитория</h2><p>Есть всего 4-ре вида объектов в данных репозитории:</p><dl><dt>blob</dt><dd>Содержимое файла</dd><dt>tree</dt><dd>Содержимое каталога</dd><dt>commit</dt><dd>Коммит</dd><dt>tag</dt><dd>Метка конкретного коммита</dd></dl><p>Каждый объект хранится в виде: <code>тип &lt;SP> размер &lt;NUL> данные</code></p><p>Помимо этих объектов есть еще ссылки на коммиты (ветки).</p></section><section class=slide><h2>Blob-объекты репозитория</h2><span style=font-size:75%><figure><figcaption><a href=../hse-2023-vcs/repo/blob.py>blob.py</a>:</figcaption><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#177500>#!/usr/bin/env python3</span>
+</span></span><span style=display:flex><span><span style=color:#177500># -*- coding: utf8 -*-</span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>import</span> <span style=color:#000>object</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>def</span> <span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>: <span style=color:#a90d91>str</span>, <span style=color:#000>data</span>: <span style=color:#a90d91>bytes</span>):
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>return</span> <span style=color:#a90d91>object</span><span style=color:#000>.</span><span style=color:#000>write</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>&#34;blob&#34;</span>, <span style=color:#000>data</span>)
+</span></span></code></pre></div></figure></span><p>Blob-объект просто содержит данные файла.</p><p>Этот тип объектов не может ссылаться ни на какие другие.</p></section><section class=slide><h2>Tree-объекты репозитория</h2><span style=font-size:75%><figure><figcaption><a href=../hse-2023-vcs/repo/tree.py>tree.py</a>:</figcaption><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#177500>#!/usr/bin/env python3</span>
+</span></span><span style=display:flex><span><span style=color:#177500># -*- coding: utf8 -*-</span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>import</span> <span style=color:#000>object</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#177500># create([</span>
+</span></span><span style=display:flex><span><span style=color:#177500>#   (0o100755, &#34;bar.sh&#34;,  &#34;74afc74214c6dd572ff137f5018a96407f20b92e&#34;), # blob</span>
+</span></span><span style=display:flex><span><span style=color:#177500>#   (0o100644, &#34;foo.txt&#34;, &#34;964880834baa20ccfd5865121f60c9ea9c62f5ff&#34;), # blob</span>
+</span></span><span style=display:flex><span><span style=color:#177500>#   (0o040000, &#34;subdir&#34;,  &#34;840613015b2fe6287427884150e5ebd55c1b8574&#34;), # tree</span>
+</span></span><span style=display:flex><span><span style=color:#177500>#   (0o160000, &#34;submod&#34;,  &#34;aa2d6217394ba004578be6a83fcd33aa8db22b20&#34;), # commit</span>
+</span></span><span style=display:flex><span><span style=color:#177500># ])</span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>def</span> <span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>: <span style=color:#a90d91>str</span>, <span style=color:#000>tree</span>):
+</span></span><span style=display:flex><span>    <span style=color:#000>data</span> <span style=color:#000>=</span> <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>for</span> (<span style=color:#000>attr</span>, <span style=color:#000>name</span>, <span style=color:#a90d91>hash</span>) <span style=color:#000>in</span> <span style=color:#000>tree</span>:
+</span></span><span style=display:flex><span>        <span style=color:#000>data</span> <span style=color:#000>+=</span> <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;</span><span style=color:#c41a16>%o</span><span style=color:#c41a16> </span><span style=color:#c41a16>%s</span><span style=color:#c41a16>\0</span><span style=color:#c41a16>%s</span><span style=color:#c41a16>&#34;</span> <span style=color:#000>%</span> (<span style=color:#000>attr</span>, <span style=color:#000>name</span><span style=color:#000>.</span><span style=color:#000>encode</span>(<span style=color:#c41a16>&#34;utf-8&#34;</span>), <span style=color:#a90d91>bytes</span><span style=color:#000>.</span><span style=color:#000>fromhex</span>(<span style=color:#a90d91>hash</span>))
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>return</span> <span style=color:#a90d91>object</span><span style=color:#000>.</span><span style=color:#000>write</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>&#34;tree&#34;</span>, <span style=color:#000>data</span>)
+</span></span></code></pre></div></figure></span><p>Tree-объекты содержат список объектов внутри директории.</p></section><section class=slide><h2>Commit-объекты репозитория</h2><span style=font-size:75%><figure><figcaption><a href=../hse-2023-vcs/repo/commit.py>commit.py</a>:</figcaption><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#177500>#!/usr/bin/env python3</span>
+</span></span><span style=display:flex><span><span style=color:#177500># -*- coding: utf8 -*-</span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>import</span> <span style=color:#000>object</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>def</span> <span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>: <span style=color:#a90d91>str</span>, <span style=color:#000>tree</span>: <span style=color:#a90d91>str</span>, <span style=color:#000>parents</span>, <span style=color:#000>author</span>: <span style=color:#a90d91>str</span>, <span style=color:#000>message</span>: <span style=color:#a90d91>str</span>):
+</span></span><span style=display:flex><span>    <span style=color:#000>data</span> <span style=color:#000>=</span> <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#000>data</span> <span style=color:#000>+=</span> <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;tree </span><span style=color:#c41a16>%s</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>&#34;</span> <span style=color:#000>%</span> (<span style=color:#000>tree</span><span style=color:#000>.</span><span style=color:#000>encode</span>(<span style=color:#c41a16>&#34;utf-8&#34;</span>),)
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>for</span> <span style=color:#000>parent</span> <span style=color:#000>in</span> <span style=color:#000>parents</span>:
+</span></span><span style=display:flex><span>        <span style=color:#000>data</span> <span style=color:#000>+=</span> <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;parent </span><span style=color:#c41a16>%s</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>&#34;</span> <span style=color:#000>%</span> (<span style=color:#000>parent</span><span style=color:#000>.</span><span style=color:#000>encode</span>(<span style=color:#c41a16>&#34;utf-8&#34;</span>),)
+</span></span><span style=display:flex><span>    <span style=color:#000>data</span> <span style=color:#000>+=</span> <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;author </span><span style=color:#c41a16>%s</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>&#34;</span> <span style=color:#000>%</span> (<span style=color:#000>author</span><span style=color:#000>.</span><span style=color:#000>encode</span>(<span style=color:#c41a16>&#34;utf-8&#34;</span>))
+</span></span><span style=display:flex><span>    <span style=color:#000>data</span> <span style=color:#000>+=</span> <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;committer </span><span style=color:#c41a16>%s</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>&#34;</span> <span style=color:#000>%</span> (<span style=color:#000>author</span><span style=color:#000>.</span><span style=color:#000>encode</span>(<span style=color:#c41a16>&#34;utf-8&#34;</span>))
+</span></span><span style=display:flex><span>    <span style=color:#000>data</span> <span style=color:#000>+=</span> <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>%s</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>&#34;</span> <span style=color:#000>%</span> (<span style=color:#000>message</span><span style=color:#000>.</span><span style=color:#000>encode</span>(<span style=color:#c41a16>&#34;utf-8&#34;</span>))
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>return</span> <span style=color:#a90d91>object</span><span style=color:#000>.</span><span style=color:#000>write</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>&#34;commit&#34;</span>, <span style=color:#000>data</span>)
+</span></span></code></pre></div></figure></span><p>Commit-объект содержит автора, сообщение, ссылку на дерево и родительские коммиты.</p></section><section class=slide><h2>Ветки репозитория</h2><span style=font-size:75%><figure><figcaption><a href=../hse-2023-vcs/repo/branch.py>branch.py</a>:</figcaption><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#177500>#!/usr/bin/env python3</span>
+</span></span><span style=display:flex><span><span style=color:#177500># -*- coding: utf8 -*-</span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>import</span> <span style=color:#000>os.path</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>def</span> <span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>: <span style=color:#a90d91>str</span>, <span style=color:#000>name</span>: <span style=color:#a90d91>str</span>, <span style=color:#000>commit</span>: <span style=color:#a90d91>str</span>):
+</span></span><span style=display:flex><span>    <span style=color:#000>path</span> <span style=color:#000>=</span> <span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>path</span><span style=color:#000>.</span><span style=color:#000>join</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>&#34;.git/refs/heads&#34;</span>, <span style=color:#000>name</span>)
+</span></span><span style=display:flex><span>    <span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>makedirs</span>(<span style=color:#000>os</span><span style=color:#000>.</span><span style=color:#000>path</span><span style=color:#000>.</span><span style=color:#000>dirname</span>(<span style=color:#000>path</span>), <span style=color:#1c01ce>0o755</span>, <span style=color:#a90d91>True</span>)
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>with</span> <span style=color:#a90d91>open</span>(<span style=color:#000>path</span>, <span style=color:#c41a16>&#34;wb&#34;</span>) <span style=color:#a90d91>as</span> <span style=color:#000>f</span>:
+</span></span><span style=display:flex><span>        <span style=color:#000>f</span><span style=color:#000>.</span><span style=color:#000>write</span>(<span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;</span><span style=color:#c41a16>%s</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>&#34;</span> <span style=color:#000>%</span> <span style=color:#000>commit</span><span style=color:#000>.</span><span style=color:#000>encode</span>(<span style=color:#c41a16>&#34;utf-8&#34;</span>))
+</span></span><span style=display:flex><span>    <span style=color:#a90d91>print</span>(<span style=color:#000>commit</span>, <span style=color:#c41a16>&#34;&lt;==&#34;</span>, <span style=color:#000>name</span>)
+</span></span></code></pre></div></figure></span><p>Это просто файл с именем ветки, который содержит хэш коммита. То есть это просто именованная ссылка на конкретный
+коммит.</p></section><section class=slide><h2>Создаём репозиторий</h2><span style=font-size:50%><figure><figcaption><a href=../hse-2023-vcs/repo/main.py>main.py</a>:</figcaption><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#177500>#!/usr/bin/env python3</span>
+</span></span><span style=display:flex><span><span style=color:#177500># -*- coding: utf8 -*-</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>import</span> <span style=color:#000>tree</span><span style=color:#000>,</span> <span style=color:#000>blob</span><span style=color:#000>,</span> <span style=color:#000>repo</span><span style=color:#000>,</span> <span style=color:#000>commit</span><span style=color:#000>,</span> <span style=color:#000>branch</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>dir</span> <span style=color:#000>=</span> <span style=color:#c41a16>&#34;.&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#000>repo</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>)
+</span></span><span style=display:flex><span><span style=color:#000>foo</span> <span style=color:#000>=</span> <span style=color:#000>blob</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;Git repo from scratch</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#000>barv1</span> <span style=color:#000>=</span> <span style=color:#000>blob</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;Lorem</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>ippsum</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>dolor</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>sit</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>amet</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#000>barv2</span> <span style=color:#000>=</span> <span style=color:#000>blob</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>b</span><span style=color:#c41a16>&#34;Lorem</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>ipsum</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>dolor</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>sit</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>amet</span><span style=color:#c41a16>\n</span><span style=color:#c41a16>&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000>t1</span> <span style=color:#000>=</span> <span style=color:#000>tree</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>, [
+</span></span><span style=display:flex><span>    (<span style=color:#1c01ce>0o100644</span>, <span style=color:#c41a16>&#34;bar.txt&#34;</span>, <span style=color:#000>barv1</span>),
+</span></span><span style=display:flex><span>    (<span style=color:#1c01ce>0o100644</span>, <span style=color:#c41a16>&#34;foo.txt&#34;</span>, <span style=color:#000>foo</span>),
+</span></span><span style=display:flex><span>])
+</span></span><span style=display:flex><span><span style=color:#000>c1</span> <span style=color:#000>=</span> <span style=color:#000>commit</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>, <span style=color:#000>t1</span>, [], <span style=color:#c41a16>&#34;Artem &lt;bozaro@yandex.ru&gt; 1696268685 +0300&#34;</span>, <span style=color:#c41a16>&#34;Commit 1&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000>t2</span> <span style=color:#000>=</span> <span style=color:#000>tree</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>, [
+</span></span><span style=display:flex><span>    (<span style=color:#1c01ce>0o040000</span>, <span style=color:#c41a16>&#34;bar&#34;</span>, <span style=color:#000>tree</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>, [
+</span></span><span style=display:flex><span>        (<span style=color:#1c01ce>0o100644</span>, <span style=color:#c41a16>&#34;bar.txt&#34;</span>, <span style=color:#000>barv2</span>),
+</span></span><span style=display:flex><span>    ])),
+</span></span><span style=display:flex><span>    (<span style=color:#1c01ce>0o100644</span>, <span style=color:#c41a16>&#34;foo.txt&#34;</span>, <span style=color:#000>foo</span>),
+</span></span><span style=display:flex><span>])
+</span></span><span style=display:flex><span><span style=color:#000>c2</span> <span style=color:#000>=</span> <span style=color:#000>commit</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>, <span style=color:#000>t2</span>, [<span style=color:#000>c1</span>], <span style=color:#c41a16>&#34;Artem &lt;bozaro@yandex.ru&gt; 1696662204 +0300&#34;</span>, <span style=color:#c41a16>&#34;Minor fix&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#000>c3</span> <span style=color:#000>=</span> <span style=color:#000>commit</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>, <span style=color:#000>t2</span>, [<span style=color:#000>c1</span>, <span style=color:#000>c2</span>], <span style=color:#c41a16>&#34;Artem &lt;bozaro@yandex.ru&gt; 1696662427 +0300&#34;</span>, <span style=color:#c41a16>&#34;Merge&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#000>branch</span><span style=color:#000>.</span><span style=color:#000>create</span>(<span style=color:#a90d91>dir</span>, <span style=color:#c41a16>&#34;demo&#34;</span>, <span style=color:#000>c3</span>)
+</span></span></code></pre></div></figure></span></section><section class=slide><h2>Выполняем скрипт</h2><pre><code>./main.py
+2b0086133aeb100d73eecaee115ab18df6c8985a blob
+90a13b791d9a37e20b01e01eb4c6e77695f6a243 blob
+7b335cc9bca0e70782ba26a376e33242e5154199 blob
+6a484aeaa36216c81cbca06f89c13f5e923fead9 tree
+3a78335e22d824bc4896e23803b089e6bb8fbafd commit
+6783d45f5287538b95e4518ab92388a16f8b8387 tree
+031eccc2fe7cd55cf47212c320db7fdb1800464f tree
+52688b886931c02e4c3a2527c09f1c426720b526 commit
+e90d9e7d93bef10d08ecba3c1ca0dbd4277a7121 commit
+e90d9e7d93bef10d08ecba3c1ca0dbd4277a7121 <== demo
+    </code></pre></section><section class=slide><h2>Проверяем</h2><pre style=font-size:50%><code class=text>
+git log demo --graph --stat
+
+*   <font color=#A2734C>commit e90d9e7d93bef10d08ecba3c1ca0dbd4277a7121 (</font><font color=#26A269><b>demo</b></font><font color=#A2734C>)</font>
+<font color=#C01C28>|</font><font color=#26A269>\</font>  Merge: 3a78335 52688b8
+<font color=#C01C28>|</font> <font color=#26A269>|</font> Author: Artem &lt;bozaro@yandex.ru&gt;
+<font color=#C01C28>|</font> <font color=#26A269>|</font> Date:   Sat Oct 7 10:07:07 2023 +0300
+<font color=#C01C28>|</font> <font color=#26A269>|</font>
+<font color=#C01C28>|</font> <font color=#26A269>|</font>     Merge
+<font color=#C01C28>|</font> <font color=#26A269>|</font>
+<font color=#C01C28>|</font> * <font color=#A2734C>commit 52688b886931c02e4c3a2527c09f1c426720b526</font>
+<font color=#C01C28>|/</font>  Author: Artem &lt;bozaro@yandex.ru&gt;
+<font color=#C01C28>|</font>   Date:   Sat Oct 7 10:03:24 2023 +0300
+<font color=#C01C28>|</font>
+<font color=#C01C28>|</font>       Minor fix
+<font color=#C01C28>|</font>
+<font color=#C01C28>|</font>    bar.txt =&gt; bar/bar.txt | 2 <font color=#26A269>+</font><font color=#C01C28>-</font>
+<font color=#C01C28>|</font>    1 file changed, 1 insertion(+), 1 deletion(-)
+<font color=#C01C28>|</font>
+* <font color=#A2734C>commit 3a78335e22d824bc4896e23803b089e6bb8fbafd</font>
+  Author: Artem &lt;bozaro@yandex.ru&gt;
+  Date:   Mon Oct 2 20:44:45 2023 +0300
+
+      Commit 1
+
+   bar.txt | 5 <font color=#26A269>+++++</font>
+   foo.txt | 1 <font color=#26A269>+</font>
+   2 files changed, 6 insertions(+)
+    </code></pre></section><section class=slide><h2>То же самое средствами Git</h2><span style=font-size:50%><figure><figcaption><a href=../hse-2023-vcs/repo.sh>repo.sh</a>:</figcaption><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#633820>#!/bin/bash -ex
+</span></span></span><span style=display:flex><span><span style=color:#633820></span>git init -b demo .
+</span></span><span style=display:flex><span>git config --local user.email bozaro@yandex.ru
+</span></span><span style=display:flex><span>git config --local user.name Artem
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>echo</span> -en <span style=color:#c41a16>&#34;Git repo from scratch\n&#34;</span> &gt; foo.txt
+</span></span><span style=display:flex><span><span style=color:#a90d91>echo</span> -en <span style=color:#c41a16>&#34;Lorem\nippsum\ndolor\nsit\namet\n&#34;</span> &gt; bar.txt
+</span></span><span style=display:flex><span>git add foo.txt bar.txt
+</span></span><span style=display:flex><span><span style=color:#a90d91>export</span> <span style=color:#000>GIT_COMMITTER_DATE</span><span style=color:#000>=</span><span style=color:#c41a16>&#34;Mon Oct 2 20:44:45 2023 +0300&#34;</span>
+</span></span><span style=display:flex><span>git commit --date <span style=color:#c41a16>&#34;</span><span style=color:#000>$GIT_COMMITTER_DATE</span><span style=color:#c41a16>&#34;</span> -m <span style=color:#c41a16>&#34;Commit 1&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>git checkout -b fix
+</span></span><span style=display:flex><span>mkdir -p bar
+</span></span><span style=display:flex><span>mv -f bar.txt bar/bar.txt
+</span></span><span style=display:flex><span>sed -i s/ippsum/ipsum/g bar/bar.txt
+</span></span><span style=display:flex><span>git add bar.txt bar/bar.txt
+</span></span><span style=display:flex><span><span style=color:#a90d91>export</span> <span style=color:#000>GIT_COMMITTER_DATE</span><span style=color:#000>=</span><span style=color:#c41a16>&#34;Sat Oct 7 10:03:24 2023 +0300&#34;</span>
+</span></span><span style=display:flex><span>git commit --date <span style=color:#c41a16>&#34;</span><span style=color:#000>$GIT_COMMITTER_DATE</span><span style=color:#c41a16>&#34;</span> -m <span style=color:#c41a16>&#34;Minor fix&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>git checkout demo
+</span></span><span style=display:flex><span><span style=color:#a90d91>export</span> <span style=color:#000>GIT_COMMITTER_DATE</span><span style=color:#000>=</span><span style=color:#c41a16>&#34;Sat Oct 7 10:07:07 2023 +0300&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#a90d91>export</span> <span style=color:#000>GIT_AUTHOR_DATE</span><span style=color:#000>=</span><span style=color:#c41a16>&#34;</span><span style=color:#c41a16>${</span><span style=color:#000>GIT_COMMITTER_DATE</span><span style=color:#c41a16>}</span><span style=color:#c41a16>&#34;</span>
+</span></span><span style=display:flex><span>git merge -m <span style=color:#c41a16>&#34;Merge&#34;</span> --no-ff fix
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>git log demo --graph --stat
+</span></span></code></pre></div></figure></span></section><section class=slide><h2>Git это направленный ациклический граф</h2><blockquote><a href=https://github.com/torvalds/linux/commit/2cde51fbd0f3>66-way merge: "Christ, that's not an
+octopus, that's a Cthulhu merge"</a></blockquote><p style=font-size:70%>Merge remote-tracking branches 'asoc/topic/ad1836', 'asoc/topic/ad193x',
+'asoc/topic/adav80x', 'asoc/topic/adsp', 'asoc/topic/ak4641', 'asoc/topic/ak4642', 'asoc/topic/arizona',
+'asoc/topic/atmel', 'asoc/topic/au1x', 'asoc/topic/axi', 'asoc/topic/bcm2835', 'asoc/topic/blackfin',
+'asoc/topic/cs4271', 'asoc/topic/cs42l52', 'asoc/topic/da7210', 'asoc/topic/davinci', 'asoc/topic/ep93xx',
+'asoc/topic/fsl', 'asoc/topic/fsl-mxs', 'asoc/topic/generic', 'asoc/topic/hdmi', 'asoc/topic/jack',
+'asoc/topic/jz4740', 'asoc/topic/max98090', 'asoc/topic/mxs', 'asoc/topic/omap', 'asoc/topic/pxa',
+'asoc/topic/rcar', 'asoc/topic/s6000', 'asoc/topic/sai', 'asoc/topic/samsung', 'asoc/topic/sgtl5000',
+'asoc/topic/spear', 'asoc/topic/ssm2518', 'asoc/topic/ssm2602', 'asoc/topic/tegra', 'asoc/topic/tlv320aic3x',
+'asoc/topic/twl6040', 'asoc/topic/txx9', 'asoc/topic/uda1380', 'asoc/topic/width', 'asoc/topic/wm8510',
+'asoc/topic/wm8523', 'asoc/topic/wm8580', 'asoc/topic/wm8711', 'asoc/topic/wm8728', 'asoc/topic/wm8731',
+'asoc/topic/wm8741', 'asoc/topic/wm8750', 'asoc/topic/wm8753', 'asoc/topic/wm8776', 'asoc/topic/wm8804',
+'asoc/topic/wm8900', 'asoc/topic/wm8901', 'asoc/topic/wm8940', 'asoc/topic/wm8962', 'asoc/topic/wm8974',
+'asoc/topic/wm8985', 'asoc/topic/wm8988', 'asoc/topic/wm8990', 'asoc/topic/wm8991', 'asoc/topic/wm8994',
+'asoc/topic/wm8995', 'asoc/topic/wm9081' and 'asoc/topic/x86' into asoc-next</p></section><section class=slide><h2>Следствия внутренней структуры</h2><ul><li>Коммит не принадлежит ветке</li><li>В Git не хранятся изменения, не хранится история перемещения файлов</li><li>Автор, коммитер, дата &mdash; всё условно</li><li>Коммит нельзя поменять задним числом</li><li>Локально хранится вся история</li><li>Нельзя создать пустую директорию</li></ul></section><section class=slide><h2>Автор, коммитер, дата &mdash; всё условно</h2><p>Все параметры коммитов задаются на клиенте. Если их не форсировать, то туда можно вписать всё что угодно.</p><p>В частности, пользователя отправившего коммит в GitHub можно узнать колько через API GitHub-а. Средстави Git его
+узнать нельзя.</p><p>Один из частых способов решения проблемы: запрет заливки коммитов с другим коммитером на уровне серверных
+hook-ов.</p></section><section class=slide><h2>Коммит нельзя поменять задним числом</h2><p>А как работает команда <code>git notes</code>?</p><pre style=font-size:70%><code class=text><font color=#26A269><b>➜  </b></font><font color=#12488B><b>git:(</b></font><font color=#C01C28><b>demo</b></font><font color=#12488B><b>) </b></font><font color=#A2734C><b>✗</b></font> git log -n1
+<font color=#A2734C>commit e90d9e7d93bef10d08ecba3c1ca0dbd4277a7121 (</font><font color=#2AA1B3><b>HEAD -&gt; </b></font><font color=#26A269><b>demo</b></font><font color=#A2734C>)</font>
+Merge: 3a78335 52688b8
+Author: Artem &lt;bozaro@yandex.ru&gt;
+Date:   Sat Oct 7 10:07:07 2023 +0300
+
+    Merge
+<font color=#26A269><b>➜  </b></font><font color=#12488B><b>git:(</b></font><font color=#C01C28><b>demo</b></font><font color=#12488B><b>) </b></font><font color=#A2734C><b>✗</b></font> git notes add -m &apos;Add commit info&apos;
+<font color=#26A269><b>➜  </b></font><font color=#12488B><b>git:(</b></font><font color=#C01C28><b>demo</b></font><font color=#12488B><b>) </b></font><font color=#A2734C><b>✗</b></font> git log -n1
+<font color=#A2734C>commit e90d9e7d93bef10d08ecba3c1ca0dbd4277a7121 (</font><font color=#2AA1B3><b>HEAD -&gt; </b></font><font color=#26A269><b>demo</b></font><font color=#A2734C>)</font>
+Merge: 3a78335 52688b8
+Author: Artem &lt;bozaro@yandex.ru&gt;
+Date:   Sat Oct 7 10:07:07 2023 +0300
+
+    Merge
+
+Notes:
+    Add commit info
+</code></pre></section><section class=slide><h2>Локально хранится вся история</h2><p>В репозитории могут храниться большие файлы и размер репозитория может быть проблемой.</p><dl><dt>Git Large File Storage (LFS)</dt><dd><p>Расширение Git'а, предназначенное для версионирования больших файлов. Git LFS заменяет большие файлы
+(аудио, видео, наборы данных или графические файлы) текстовыми указателями внутри Git'а, в то время как само
+содержимое этих файлов сохраняется на удалённом сервере, таком как GitHub.com.</p><p>Большинство серверов Git (например, GitLab, GitHub, BitBucket, Gitea) поддерживают Git LFS.</p></dd></dl></section><section class=slide><h2 class=shout>Команды Git</h2></section><section class=slide><h2>Начало работы</h2><h3>git config</h3><p>Крайне рекомендуется начать с указания имени пользователя :)</p><pre><code class=bash>git config --global user.email "bozaro@yandex.ru"
+git config --global user.name "Artem"</code></pre><h3>git init</h3><p>Команда <code>git init</code> позволяет создать новый пустой репозиторий.</p><h3>git clone</h3><p>Команда вида <code>git clone git@github.com:bozaro/presentations.git</code> позволяет создать локальную рабочую
+копию удалённого репозитория.</p></section><section class=slide><h2>Кратенько о .gitignore</h2><h3>Простой пример</h3><pre><code class=text>.idea/
+.build/
+**/~*
+*.pyc
+.DS_Store
+    </code></pre><h3>Исключения</h3><pre><code class=text># exclude everything except directory foo/bar
+/*
+!/foo
+/foo/*
+!/foo/bar
+</code></pre></section><section class=slide><h2>Базовый сценарий Git</h2><h3>git add</h3><pre><code class=bash>git add foo.txt
+git add "**/*.txt"</code></pre><p>Добавление/удаление файла в индекс Git</p><h3>git commit</h3><pre><code class=bash>git commit -m "Commit message"
+git commit --amend -m "Commit message"</code></pre><p>Созание коммита из текущего состояния индекса.</p><h3>git push</h3><pre><code class=bash>git push --set-upstream origin</code></pre><p>Отправка локальной истории текущей ветки на сервер.</p><p></p></section><section class=slide><h2>Просмотр истории</h2><h3>git log</h3><pre><code class=bash>git log origin/master..master
+git log origin/master...master</code></pre><p>Просмотр истории коммитов.</p><h3>git annotate</h3><p>Просмотр информации о том, в каком коммите какая строка файла была изменена в последний раз.</p></section><section class=slide><h2>Просмотр истории</h2><h3>git show</h3><pre><code class=bash>git show HEAD
+git show HEAD~2:README.md</code></pre><p>Просмотр изменений коммита.</p></section><section class=slide><h2>Получение изменений с сервера</h2><h3>git pull</h3><p>Загружает изменения с сервера и делает merge полученной головы текущей ветки в текущую локальную ветку.</p><h3>git fetch</h3><p>Просто загружает изменения с сервера.</p><h3>git status</h3><p>Отображает текущее состояние рабочей копии.</p><pre><code class=text>
+On branch master
+Your branch is up to date with 'origin/master'.
+    </code></pre></section><section class=slide><h2>Ветвление</h2><h3>git checkout</h3><pre><code class=bash>git checkout master</code></pre><p>Переключение рабочей копии на ветку <code>master</code>.</p><pre><code class=bash>git checkout -b feature-123</code></pre><p>Создание новой ветки <code>feature-123</code> от текущей головы рабочей копии.</p><h3>git merge</h3><pre><code class=bash>git checkout master
+git merge feature-123</code></pre><p>Переключение на ветку <code>master</code> и вливание в неё ветки <code>feature-123</code>.</p></section><section class=slide><h2>Подобрать вишенку</h2><h3>git cherry-pick</h3><pre><code class=bash>git cherry-pick fcb2604</code></pre><p>Создание нового коммита на текущей ветке по образу и подобию коммита <code>fcb2604</code></p></section><section class=slide><h2>Правила хорошего тона</h2><ul><li>Добавлять ID задачи</li><li>Писать заголовки до 50 символов, а в теле ограничивать длину строки 72 символами</li><li>Делать отступ между заголовком и описанием</li><li>В теле описания должны быть ответы на вопросы: «Что?» и «Почему?»</li><li>Каждый коммит должен быть самодостаточен</li></ul></section><section class=slide><h2>Переписывание истории</h2><h3>git rebase</h3><pre class=mermaid>
+%%{init: { 'gitGraph': {'rotateCommitLabel': false}} }%%
+gitGraph
+        commit id:"A"
+        commit id:"B"
+        branch "topic*"
+        commit id:"C"
+        commit id:"D"
+        checkout main
+        commit id:"E"
+        commit id:"F"
+    </pre><pre><code class=bash>git rebase main topic</code></pre><pre><code class=bash>git rebase main</code></pre><pre class=mermaid>
+%%{init: { 'gitGraph': {'rotateCommitLabel': false}} }%%
+gitGraph
+        commit id:"A"
+        commit id:"B"
+        commit id:"E"
+        commit id:"F"
+        branch "topic*"
+        commit id:"C'"
+        commit id:"D'"
+    </pre></section><section class=slide><h2>Переписывание истории</h2><h3>git rebase</h3><pre class=mermaid>
+%%{init: { 'gitGraph': {'rotateCommitLabel': false}} }%%
+gitGraph
+        commit id:"A"
+        commit id:"B"
+        branch topicA
+        commit id:"C"
+        commit id:"D"
+        branch topicB
+        commit id:"E"
+        commit id:"F"
+    </pre><pre><code class=bash>git rebase --onto main topicA topicB</code></pre><pre class=mermaid>
+%%{init: { 'gitGraph': {'rotateCommitLabel': false}} }%%
+gitGraph
+        commit id:"A"
+        commit id:"B"
+        branch topicA
+        commit id:"C"
+        commit id:"D"
+        checkout main
+        branch topicB
+        commit id:"E'"
+        commit id:"F'"
+    </pre></section><section class=slide><h2>Переписывание истории</h2><h3>git rebase -i</h3><pre style=font-size:50%><code class=text># Rebase 91e416e..61baca6 onto 91e416e (11 commands)
+#
+# Commands:
+# p, pick <commit> = use commit
+# r, reword <commit> = use commit, but edit the commit message
+# e, edit <commit> = use commit, but stop for amending
+# s, squash <commit> = use commit, but meld into previous commit
+# f, fixup [-C | -c] <commit> = like "squash" but keep only the previous
+#                    commit's log message, unless -C is used, in which case
+#                    keep only this commit's message; -c is same as -C but
+#                    opens the editor
+# x, exec <command> = run command (the rest of the line) using shell
+# b, break = stop here (continue rebase later with 'git rebase --continue')
+# d, drop <commit> = remove commit
+# l, label <label> = label current HEAD with a name
+# t, reset <label> = reset HEAD to a label
+# m, merge [-C <commit> | -c <commit>] <label> [# <oneline>]
+# .       create a merge commit using the original merge commit's
+# .       message (or the oneline, if no original merge commit was
+# .       specified); use -c <commit> to reword the commit message
+#
+# These lines can be re-ordered; they are executed from top to bottom.
+#
+# If you remove a line here THAT COMMIT WILL BE LOST.
+#
+# However, if you remove everything, the rebase will be aborted.
+</code></pre></section><section class=slide><h2>Git autosquash</h2><h3>Пример использования</h3><pre><code class=bash>$ git add .
+$ git commit --fixup HEAD
+$ git log -n2 --oneline
+6f3bc46 (HEAD -> foo) fixup! Commit 1
+3a78335 Commit 1
+$ git rebase -i HEAD^^ --autosquash
+</code></pre><h3>Включение на постоянной основе</h3><pre><code class=bash>git config --global rebase.autosquash true</code></pre></section><section class=slide><h2>Чистка</h2><h3>git clean</h3><p>Удаляет файлы, про которые не знает Git.</p><dl><dt>-d</dt><dd>Удалять директории.</dd><dt>-f, --force</dt><dd>Удалять неизвестные директории без лишних вопросов.</dd><dt>-x</dt><dd>Удалять игнорируемые файлы.</dd></dl><h3>git reset --hard</h3><p>Вернуть содержимое всех файлов в соответствие с указанным коммитом.</p></section><section class=slide><h2>Работа с временными изменениями</h2><h3>git stash</h3><p>Сохранение временных изменений в стеке.</p><h3>git stash apply</h3><p>Применение временных изменений.</p><h3>git drop</h3><p>Выкидывание временных изменений из стека.</p><h3>git stash pop</h3><p>Применение временных изменений и выкидывание их из стека.</p></section><section class=slide><h2>Git LFS</h2><h3>git lfs</h3><pre><code class=bash>$ git lfs install
+$ git lfs track "*.tar.gz"
+$ git add .gitattributes
+$ git commit -m "track *.tar.gz files using Git LFS"</code></pre><h3>.gitattributes</h3><pre><code class=text>*.tar.gz filter=lfs diff=lfs merge=lfs -text
+</code></pre></section><section class=slide><h2>Git bisect</h2><h3>git bisect bad</h3><p>Чрезвычайно полезная утилита для поиска коммита в котором впервые проявился баг или проблема с помощью
+автоматического бинарного поиска.</p></section><section class=slide><h2>Git revert</h2><p><code>git revert</code> создаёт новый коммит и изменениями, обратными к указанному коммиту.</p><p>Не очевидно, что "откатить" <code>git revert</code> при помощи повторного <code>git merge</code> нельзя. Его надо
+откатывать через <code>git revert</code> коммита с ревертом.</p><pre class=mermaid>
+%%{init: { 'gitGraph': {'rotateCommitLabel': true}} }%%
+gitGraph
+        commit id:"A"
+        commit id:"B"
+        branch topic
+        commit id:"C"
+        commit id:"D"
+        checkout main
+        merge topic id:"E"
+        commit id:"F"
+        commit id:"revert E" type: REVERSE
+        commit id:"G"
+        commit id:"revert revert E" type: REVERSE
+    </pre></section><section class=slide><h2>Ааа!!! Я запутался!!!</h2><img src=this-is-fine.png style=width:300px;position:absolute;bottom:50px;right:50px;z-index:-1>
+<span class=next><h3>git reflog</h3><p>Git reflog показывает последние коммиты, на которых была голова рабочей копии.</p></span></section><section class=slide><h2 class=shout>Особенности операционных систем</h2></section><section class=slide><h2>Окончания файлов (.gitattributes)</h2><dl><dt>text=auto</dt><dd>Вариант по умолчанию. Используется EOL для текущей OS</dd><dt>text eol=crlf</dt><dd>Git будет всегда преобразовывать окончания строк в CRLF при извлечении, даже в OSX или Linux.</dd><dt>text eol=lf</dt><dd>Git будет всегда преобразовывать окончания строк в LF, даже в Windows.</dd><dt>binary</dt><dd>Файлы не являются текстом и изменять их не следует. Параметр binary также является псевдонимом для -text
+-diff.</dd></dl></section><section class=slide><h2>Регистрозависимость</h2><p>В Linux обычно файловая система является регистрозависимой.</p><p>В Windows и OSX файловая система является регистронезависимой.</p></section><section class=slide><h2>Executable bit</h2><p>Флаг исполняемого файла специфичен только для POSIX-файловых систем. В Windows его нет.</p></section><section class=slide><h2>Кодировка и имена файлов</h2><p>Статья про нормализацию Unicode: <a href=https://habr.com/ru/articles/45489/>habr.com/ru/articles/45489</a></p><dl><dt>Normalization Form C (NFC)</dt><dd>По-умолчанию используется в Windows и Linux</dd><dt>Normalization Form D (NFD)</dt><dd>По-умолчанию используется в OSX</dd></dl><table class="striped compact"><tr><th>Source</th><th>Normalization Form D (NFD)</th><th>Normalization Form C (NFC)</th></tr><tr style=font-size:25pt;font-family:serif><td><div style=width:1em;text-align:center;display:table-cell>&#197;<div style=font-size:30%;font-family:monospace>00C5</div></div></td><td><div style=width:1em;text-align:center;display:table-cell>A<div style=font-size:30%;font-family:monospace>0041</div></div><div style=width:1em;text-align:center;display:table-cell><div style=width:1em;position:absolute>&#9676;</div>&#730;<div style=font-size:30%;font-family:monospace>030A</div></div></td><td><div style=width:1em;text-align:center;display:table-cell>&#197;<div style=font-size:30%;font-family:monospace>00C5</div></div></td></tr><tr style=font-size:25pt;font-family:serif><td><div style=width:1em;text-align:center;display:table-cell>&#244;<div style=font-size:30%;font-family:monospace>00F4</div></div></td><td><div style=width:1em;text-align:center;display:table-cell>o<div style=font-size:30%;font-family:monospace>006F</div></div><div style=width:1em;text-align:center;display:table-cell><div style=width:1em;position:absolute>&#9676;</div>&#710;<div style=font-size:30%;font-family:monospace>0302</div></div></td><td><div style=width:1em;text-align:center;display:table-cell>&#244;<div style=font-size:30%;font-family:monospace>00F4</div></div></td></tr><tr style=font-size:25pt;font-family:serif><td><div style=display:table-cell>&#1081;<div style=font-size:30%;font-family:monospace>0439</div></div></td><td><div style=width:1em;text-align:center;display:table-cell>&#1080;<div style=font-size:30%;font-family:monospace>0438</div></div><div style=width:1em;text-align:center;display:table-cell><div style=width:1em;position:absolute>&#9676;</div>&#728;<div style=font-size:30%;font-family:monospace>0306</div></div></td><td><div style=width:1em;text-align:center;display:table-cell>&#1081;<div style=font-size:30%;font-family:monospace>0439</div></div></td></tr></table></section><section class=slide><h2 class=shout>Из Subversion в Git</h2></section><section class=slide><h2>git svn</h2><p>Утилита, позволяющая локально держать Git-репозиторий и из него коммитить в Subversion.</p></section><section class=slide><h2><a href=https://subgit.com/>SubGit</a></h2><img src=subgit.png style=width:600px;position:absolute;bottom:50px;right:50px;z-index:-1><p>Официальный сайт: <a href=https://subgit.com/>subgit.com</a></p><p>Сервис, который держит в синхронизированном состоянии как Subversion, так и Git вариант репозитория.</p></section><section class=slide><h2><a href=https://github.com/git-as-svn/git-as-svn>git-as-svn</a></h2><img src=git-as-svn.jpg style=width:200px;position:absolute;bottom:50px;right:50px;z-index:-1><p>Статья на Хабр: <a href=https://habr.com/ru/companies/vk/articles/241095/>habr.com/ru/companies/vk/articles/241095</a></p><p>Сервис, реализующий Subversion-сервис поверх существующего Git-репозитория.</p><p>В отличие от SubGit, не использует для работы отдельную копию Subversion-репозитория. Все данные только в
+Git.</p></section><section class=slide><h2 class=shout>Домашняя работа</h2></section><section class=slide><h2>Домашняя работа</h2><p>Пройти вкладку &#171;Основы&#187; на сайте <a href="https://learngitbranching.js.org/?locale=ru_RU">learngitbranching.js.org</a>.</p><img src=learn-git-branching.gif style=height:350px;position:absolute;bottom:50px;right:50px;z-index:-1></section><section class=slide id=see-more><h2 class=shout>Спасибо за внимание!</h2></section><div class=progress></div><footer class=badge><a href=https://github.com/bozaro/presentations>Fork me on GitHub</a></footer><script src=../shower/shower.min.js></script>
+<script src=../highlight.js/highlight.js></script>
+<script>document.addEventListener("DOMContentLoaded",e=>{document.querySelectorAll("pre code").forEach(e=>{hljs.highlightBlock(e)})})</script><script type=module>
+		import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
+		mermaid.initialize({ startOnLoad: true });
+	</script></body></html>
