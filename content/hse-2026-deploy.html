@@ -1,0 +1,140 @@
+---
+title: Как развернуть приложение?
+---
+<section class="slide">
+    <h2 class="shout">Контейнеры и виртуальные машины</h2>
+</section>
+
+<section class="slide">
+    <h2>Сервисы и физическое железо</h2>
+    <p>Обычно физический сервер слишком большой для одного экземпляра сервиса.</p>
+    <p>Есть потребность запускать несколько разных сервисов на одном физичесом сервере.</p>
+    <div style="font-size: 80%; position: absolute; bottom: 50px; right: 50px">
+        <p>Сервер xFusion 1288H V7 8SFF (1U)</p>
+        <ul>
+            <li>CPU 2x Intel Xeon Gold 6430 (32C 60M Cache 2.10 GHz)</li>
+            <li>RAM 12x 64GB DDR5 RDIMM 4800MHz</li>
+            <li>HDD 2x SSD 480GB SATA 2,5" (до 8 HDD 2.5'' SFF)</li>
+        </ul>
+        <p>Итого: 64 ядра (128 потоков исполнения) и 768GB RAM</p>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Несколько сервисов на одном сервере</h2>
+    <p>Технически можно установить несколько сервисов на одном сервере.</p>
+    <ul>
+        <li>Общая операционная система, которую очень больно обновлять</li>
+        <li>Проблема изоляции ресурсов</li>
+        <li>Проблема общих зависимостей</li>
+        <li>Проблема воспроизводимости окружения</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Какие пути решения?</h2>
+    <h3>Виртуализация</h3>
+    <p>Внутри гипервизора запускаем несколько виртуальных хостов.</p>
+    <h3>Контейнеризация</h3>
+    <p>Внутри операционной системы приложения изолируются в отдельных контейнерах.</p>
+</section>
+
+<section class="slide">
+    <h2>Виртуализация</h2>
+    <h3>Плюсы</h3>
+    <ul class="compact">
+        <li>Можно запускать разные операционные системы (к примеру Windows и Linux)</li>
+        <li>Высокая степень изоляции</li>
+        <li>Можно эмулировать другую архитектуру (к примеру PlayStation 2)</li>
+    </ul>
+    <h3>Минусы</h3>
+    <ul class="compact">
+        <li>Высокие накладные расходы</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Контейнеризация</h2>
+    <h3>Плюсы</h3>
+    <ul class="compact">
+        <li>Минимальные накладные расходы</li>
+    </ul>
+    <h3>Минусы</h3>
+    <ul class="compact">
+        <li>Общее ядро операционной системы</li>
+        <li>Более слабая изоляция ресурсов (например: общий дисковый кэш)</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Docker</h2>
+    <p>Контейнеры существуют очень давно, но до Docker-а не было простой инфраструктуры для работы с контейнерами.</p>
+    <p>Docker предоставил законченное решение для:</p>
+    <ul class="compact">
+        <li>Сборки контейнеров</li>
+        <li>Обмена и переиспользования контейнеров</li>
+        <li>Запуска контейнеров</li>
+    </ul>
+    <p>Docker-контейнеры поддерживают операционные системы:</p>
+    <ul class="compact">
+        <li>Linux</li>
+        <li>Windows</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Docker-образ</h2>
+    <h3>Dockerfile</h3>
+    <pre><code class="dockerfile"># syntax=docker/dockerfile:1
+FROM golang:1.26
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY *.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app
+EXPOSE 8080
+CMD ["/app"]</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Кэширование сборки docker-образов</h2>
+    <h3>Не правильно</h3>
+    <pre><code class="dockerfile" style="font-size: 80%">RUN apt update
+RUN apt install -y golang
+</code></pre>
+    <div class="next">
+        <h3>Правильно</h3>
+        <pre><code class="dockerfile" style="font-size: 80%">RUN apt update && apt install -y golang</code></pre>
+    </div>
+    <div class="next">
+        <h3>Оптимально</h3>
+        <pre><code class="dockerfile" style="font-size: 80%">RUN --mount=type=cache,sharing=private,target=/var/cache/apt \
+    --mount=type=tmpfs,target=/tmp \
+    apt update && apt install -y golang && apt-get clean all</code></pre>
+    </div>
+</section>
+
+<section class="slide">
+    <h2 class="shout">Kubernetes</h2>
+</section>
+2. Kubernetes
+- Kubernetes - стандартизированная среда для выполнения контейнеров.
+- CI -> Docker Image -> Docker Registry -> Kubernetes.
+- Минимальные знания о кубере: запуск minikube.
+- Deployment -> ReplicaSet -> Pod, Service + Ingress.
+- Конфигурация Pod-а (ConfigMap, Secret).
+- Лимиты.
+- Пробы.
+- HorizontalPodAutoscaler.
+<section class="slide">
+    <h2 class="shout">Deploy</h2>
+</section>
+- Вводная в Helm.
+- Пример запуска минимального приложения (на каком языке)?
+- Как развернуть и запустить в Yandex Cloud?
+4. О приложениях
+- Сбор метрик с Pod-а;
+- Требования для разворачивания в Kubernetes: быстрый старт;
+- Идеально маштабируется Stateless приложение;
+- База данных обычно является узким местом;
+- Состояние в Kubernetes: StatefulSet, Persistent Volume.
