@@ -18,6 +18,7 @@ params:
   description: "Публичные презентации"
   highlightTheme: "xcode"
   useMath: false
+  theme: ribbon
   favicon: "favicon.png"
 
 markup:
