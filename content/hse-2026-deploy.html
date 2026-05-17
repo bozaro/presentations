@@ -35,15 +35,21 @@ title: Как развернуть приложение?
     <h2>Какие пути решения?</h2>
     <h3>Виртуализация</h3>
     <p>Внутри гипервизора запускаем несколько виртуальных хостов.</p>
+    <p>Каждый виртуальный хост притворяется физическим хостом.</p>
     <h3>Контейнеризация</h3>
     <p>Внутри операционной системы приложения изолируются в отдельных контейнерах.</p>
+    <p>Каждый процесс контейнера является обычным процессом операционной системы.</p>
 </section>
 
 <section class="slide">
     <h2>Виртуализация</h2>
+    <h3>Важно</h3>
+    <ul class="compact">
+        <li>Диск - блочный файл/устройство</li>
+    </ul>
     <h3>Плюсы</h3>
     <ul class="compact">
-        <li>Можно запускать разные операционные системы (к примеру Windows и Linux)</li>
+        <li>Можно запустить другую операционную систему (к примеру Windows, Linux или FreeBSD)</li>
         <li>Высокая степень изоляции</li>
         <li>Можно эмулировать другую архитектуру (к примеру PlayStation 2)</li>
     </ul>
@@ -55,6 +61,10 @@ title: Как развернуть приложение?
 
 <section class="slide">
     <h2>Контейнеризация</h2>
+    <h3>Важно</h3>
+    <ul class="compact">
+        <li>Диск - каталог на хостовой машине</li>
+    </ul>
     <h3>Плюсы</h3>
     <ul class="compact">
         <li>Минимальные накладные расходы</li>
@@ -84,16 +94,40 @@ title: Как развернуть приложение?
 
 <section class="slide">
     <h2>Docker-образ</h2>
+<pre><code class="bash" style="font-size: 75%;">git clone https://github.com/docker/docker-gs-ping .
+docker build --tag docker-gs-ping .</code></pre>
     <h3>Dockerfile</h3>
-    <pre><code class="dockerfile"># syntax=docker/dockerfile:1
-FROM golang:1.26
+    <pre><code class="dockerfile" style="font-size: 75%;"># syntax=docker/dockerfile:1
+FROM golang:1.19
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY *.go ./
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app
+RUN CGO_ENABLED=0 GOOS=linux go build -o /docker-gs-ping
 EXPOSE 8080
-CMD ["/app"]</code></pre>
+CMD [ "/docker-gs-ping" ]</code></pre>
+    <footer>https://docs.docker.com/guides/golang/build-images/</footer>
+</section>
+
+<section class="slide">
+    <h2>Docker-образ (multistage)</h2>
+<pre><code class="bash" style="font-size: 75%;">git clone https://github.com/docker/docker-gs-ping .
+docker build --tag docker-gs-ping -f Dockerfile.multistage .</code></pre>
+    <h3>Dockerfile.multistage</h3>
+    <pre><code class="dockerfile" style="font-size: 75%;"># syntax=docker/dockerfile:1
+FROM golang:1.19 AS build-stage
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY *.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /docker-gs-ping
+
+FROM gcr.io/distroless/base-debian11 AS build-release-stage
+WORKDIR /
+COPY --from=build-stage /docker-gs-ping /docker-gs-ping
+EXPOSE 8080
+USER nonroot:nonroot
+ENTRYPOINT ["/docker-gs-ping"]</code></pre>
 </section>
 
 <section class="slide">
