@@ -95,7 +95,7 @@ theme: hse
 
 <section class="slide">
     <h2>Docker-образ</h2>
-<pre><code class="bash" style="font-size: 75%;">git clone https://github.com/docker/docker-gs-ping .
+    <pre><code class="bash" style="font-size: 75%;">git clone https://github.com/docker/docker-gs-ping .
 docker build --tag docker-gs-ping .</code></pre>
     <h3>Dockerfile</h3>
     <pre><code class="dockerfile" style="font-size: 75%;"># syntax=docker/dockerfile:1
@@ -112,7 +112,7 @@ CMD [ "/docker-gs-ping" ]</code></pre>
 
 <section class="slide">
     <h2>Docker-образ (multistage)</h2>
-<pre><code class="bash" style="font-size: 75%;">git clone https://github.com/docker/docker-gs-ping .
+    <pre><code class="bash" style="font-size: 75%;">git clone https://github.com/docker/docker-gs-ping .
 docker build --tag docker-gs-ping -f Dockerfile.multistage .</code></pre>
     <h3>Dockerfile.multistage</h3>
     <pre><code class="dockerfile" style="font-size: 75%;"># syntax=docker/dockerfile:1
@@ -150,7 +150,36 @@ RUN apt install -y golang
 </section>
 
 <section class="slide">
+    <h2>Что внутри образа?</h2>
+    <img src="docker-image.avif" style="width: 75%;" />
+</section>
+
+<section class="slide">
+    <h2>Подведём итоги</h2>
+    <ul>
+        <li>OCI Image &mdash; вырос из Docker Image и является его развитием</li>
+        <li>Сборки порождают слои, каждый из которых используется только для чтения (<a
+                href="https://docs.kernel.org/filesystems/overlayfs.html">overlayfs</a>)</li>
+        <li>OCI Image содержит метаданные: переменные окружения, команда выполнения, порты и т.п., которые используются
+            как значения по-умолчанию при запуске контейнера</li>
+        <li>В контейнер можно передавать конфигурацию через модификацию переменных окружения и монтирования
+            каталогов/файлов при его запуске</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Шпаргалки по Docker</h2>
+    <h3>https://docker.how/</h3>
+    <h3>https://docs.docker.com/get-started/docker_cheatsheet.pdf</h3>
+</section>
+
+<section class="slide">
     <h2 class="shout">Kubernetes</h2>
+</section>
+
+<section class="slide">
+    <h2>Kubernetes &mdash; среда для контейнеров</h2>
+
 </section>
 2. Kubernetes
 - Kubernetes - стандартизированная среда для выполнения контейнеров.
