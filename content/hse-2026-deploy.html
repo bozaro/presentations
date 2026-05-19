@@ -201,24 +201,282 @@ spec:
     <footer>https://kubernetes.io/docs/concepts/workloads/pods/</footer>
 </section>
 
-2. Kubernetes
-- Kubernetes - стандартизированная среда для выполнения контейнеров.
-- CI -> Docker Image -> Docker Registry -> Kubernetes.
-- Минимальные знания о кубере: запуск minikube.
-- Deployment -> ReplicaSet -> Pod, Service + Ingress.
-- Конфигурация Pod-а (ConfigMap, Secret).
-- Лимиты.
-- Пробы.
-- HorizontalPodAutoscaler.
+<section class="slide">
+    <h2>Как запустить контейнер в Kubernetes?</h2>
+    <pre><code class="bash" style="font-size: 75%">kubectl get pods
+kubectl describe pod nginx
+kubectl logs nginx
+kubectl delete pod nginx</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Открытые вопросы</h2>
+    <ul>
+        <li>Какой контейнер будет использоваться для Pod-а и откуда он берётся?</li>
+        <li>Где именно будет запущен Pod?</li>
+        <li>Какие Pod-у будут выделены ресурсы?</li>
+        <li>Как достучаться до Pod-а?</li>
+        <li>Что произойдёт если удалить хост с Pod-ом?</li>
+        <li>Как передать конфигурацию в Pod?</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Ресурсы в Kubernetes</h2>
+    <h3>Запуск приложения</h3>
+    <dl>
+        <dt>Pod</dt>
+        <dd>Минимальный объект в Kubernetes.</dd>
+        <dt>ReplicaSet</dt>
+        <dd>Управляет количеством однотипных Pod-ов.</dd>
+        <dt>Deployment, StatefulSet, DaemonSet</dt>
+        <dd>Объекты, которые управляют жизненным циклом контейнерных приложений.</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Ресурсы в Kubernetes</h2>
+    <h3>Конфигурация приложения</h3>
+    <dl>
+        <dt>Переменные окружения</dt>
+        <dd>У Pod-а можно переопределить переменные окружения. Так же через них можно прокинуть часть данных о Pod-е в
+            контейнер
+            (https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/).
+        </dd>
+        <dt>Параметры командной строки</dt>
+        <dd>Можно переопределить параметры командной строки для Pod-а.</dd>
+        <dt>Secret, ConfigMap</dt>
+        <dd>Специальные ресурсы, которые можно отобразить на файловую систему Pod-а.</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Ресурсы в Kubernetes</h2>
+    <h3>Ресурсы для доступа к Pod-у</h3>
+    <dl>
+        <dt>Service</dt>
+        <dd>Объект, который позволяет адресовать группу Pod-ов.</dd>
+        <dt>Ingress</dt>
+        <dd>Объект, который позволяет достучаться к Pod-у снаружи Kubernetes-кластера.</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Запуск Pod-ов через Deployment</h2>
+    <div style="display: flex;">
+        <div style="flex: 1;">
+            <pre><code class="yaml" style="font-size: 75%">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80</code></pre>
+        </div>
+        <div style="flex: 1;">
+            <pre><code class="yaml" style="font-size: 75%">apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    ports:
+    - containerPort: 80</code></pre>
+        </div>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Указываем, какие ресурсы нужны Pod-ам</h2>
+    <mark>TODO: Добавить пример информацию о ресурсах</mark>
+</section>
+
+<section class="slide">
+    <h2>Контроль жизненного цикла</h2>
+    <p>Для определения состояния Pod-а есть следующие <a
+            href="https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/">"пробы"</a>:</p>
+    <dl>
+        <dt>readinessProbe</dt>
+        <dd>Готов ли Pod принимать пользовательскую нагрузку?</dd>
+
+        <dt>livenessProbe</dt>
+        <dd>Жив ли Pod?<br />Если Pod не живой, то его удалит автоматика</dd>
+
+        <dt>startupProbe</dt>
+        <dd>До завершения старта сервиса к нему не применяются readinessProbe и livenessProbe</dd>
+    </dl>
+    <p>Долго стартующие приложения причиняют боль страдание.</p>
+</section>
+
+<section class="slide">
+    <h2>Контроль жизненного цикла</h2>
+    <pre><code class="yaml" style="font-size: 75%">apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    ports:
+    - containerPort: 80
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 80
+      periodSeconds: 3</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Конфигурация внутри Pod-а</h2>
+    <pre><code class="yaml" style="font-size: 75%">apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    command: ["nginx", "-g", "daemon off;"]
+    env:
+    - name: FOO
+      value: "bar"
+    - name: MY_POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    ports:
+    - containerPort: 80</code></pre>
+</section>
+
+<section class="slide">
+    <h2>Конфигурация снаружи Pod-а</h2>
+    <pre><code class="yaml" style="font-size: 75%">apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx
+spec:
+  ...
+  </code></pre>
+    <mark>TODO: Добавить пример конфигурации через ConfigMap</mark>
+</section>
+
+<section class="slide">
+    <h2>Доступ к Pod-у снаружи Kubernetes-кластера</h2>
+    <mark>TODO: Добавить пример Service и Ingress</mark>
+</section>
+
+<section class="slide">
+    <h2>Подведём итоги</h2>
+    <ul>
+        <li>Ресурсами управляет Deployment</li>
+        <li>Конфигурацию можно задать через ConfigMap и переменные окружения</li>
+        <li>Обязательно надо прописывать requests для Pod-а</li>
+        <li>Обязательно надо прописывать livenessProbe, readinessProbe и startupProbe</li>
+        <li>Для адресации между Pod-ами используются Service</li>
+        <li>Для адресации снаружи Kubernetes-кластера используются Ingress</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Что осталось за кадром?</h2>
+    <ul>
+        <li>Pod nodeAffinity</li>
+        <li>Pod topologySpreadConstraints</li>
+        <li>HorizontalPodAutoscaler</li>
+        <li>PodDisruptionBudget</li>
+        <li>Состояние в Kubernetes: StatefulSet, Persistent Volume.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Шпаргалки по Kubernetes</h2>
+    <mark>TODO: Добавить шпаргалки по Kubernetes</mark>
+</section>
+
 <section class="slide">
     <h2 class="shout">Deploy</h2>
 </section>
-- Вводная в Helm.
-- Пример запуска минимального приложения (на каком языке)?
-- Как развернуть и запустить в Yandex Cloud?
-4. О приложениях
-- Сбор метрик с Pod-а;
-- Требования для разворачивания в Kubernetes: быстрый старт;
-- Идеально маштабируется Stateless приложение;
-- База данных обычно является узким местом;
-- Состояние в Kubernetes: StatefulSet, Persistent Volume.
+<section class="slide">
+    <h2>Откуда берутся ресурсы для Kubernetes?</h2>
+    <p>При раскатки приложения ресурсы для Kubernetes обычно генерируются каким-либо образом.</p>
+    <p>Применение ресурсов через <code>kubectl apply</code> имеет существенный недостаток: никто не удаляет более
+        ненужные ресурсы.</p>
+    <p>Стандартом де-факто для создания "приложений" в Kubernetes является Helm</p>
+</section>
+
+<section class="slide">
+    <h2>Helm</h2>
+    <p>
+        Helm &mdash; менеджер пакетов для Kubernetes, который упрощает установку, обновление и управление приложениями в
+        кластере. Особенность &mdash; использование чартов (Helm Charts) — стандартизированных пакетов, в которых
+        содержатся все необходимые ресурсы и конфигурации.
+    </p>
+</section>
+
+<section class="slide">
+    <h2>Шаблонизатор Helm</h2>
+    <pre><code class="yaml" style="font-size: 75%">apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+data:
+  myvalue: "Hello World"</code></pre>
+    <p>Внутри Helm использует шаблонизатор Go Template с набором дополнительных функций (в том числе <a
+            href="https://github.com/davecgh/go-spew">go-spew</a>).</p>
+    <p>Одна из проблем такого подхода: шаблонизатор работает с Yaml на уровне текста.</p>
+</section>
+
+<section class="slide">
+    <h2>Как всё выкатить?</h2>
+    <ul>
+        <li>Разработчик заливает изменения в main-ветку Git-а</li>
+        <li>На CI собирается Docker-образ с приложением</li>
+        <li>На CI публикуется Helm-чарт для приложения</li>
+        <li>CI устанавливает helm-чарт в Kubernetes-кластер</li>
+    </ul>
+    <mark>TODO: Ссылка на готовый пример с приложениями на Go и Python</mark>
+</section>
+
+<section class="slide">
+    <h2 class="shout">Настройка выкатки в Yandex Cloud</h2>
+</section>
+
+<section class="slide">
+    <h2>Подготовка Docker Registry</h2>
+    <mark>TODO: Добавить инструкцию по созданию Docker Registry</mark>
+</section>
+
+<section class="slide">
+    <h2>Подготовка Kubernetes-кластера</h2>
+    <mark>TODO: Добавить инструкцию по созданию managed Kubernetes-кластера</mark>
+</section>
+
+<section class="slide">
+    <h2>Настройка CI</h2>
+    <mark>TODO: Добавление воркера для сборки из Github Actions</mark>
+</section>
+
+<section class="slide">
+    <h2>Настройка CI</h2>
+    <mark>TODO: Добавление секретов для доступа к Docker Registry и Kubernetes-кластеру на CI</mark>
+</section>
+
+<section class="slide">
+    <h2>Сбор метрик с Pod-ов</h2>
+    <mark>TODO: Добавление сбора метрик с Pod-ов в Yandex Cloud</mark>
+</section>
