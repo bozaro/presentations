@@ -511,9 +511,9 @@ section.theme {
     left: 0;
     display: none;
     padding: 41px 100px 8px;
-    background: #fbfbba;
-    -webkit-box-shadow: 0 1px 0 #fafaa2 inset;
-    box-shadow: 0 1px 0 #fafaa2 inset;
+    background: #2b003d;
+    -webkit-box-shadow: 0 1px 0 #2b003d inset;
+    box-shadow: 0 1px 0 #2b003d inset;
     -webkit-transition: bottom .3s;
     transition: bottom .3s
 }
