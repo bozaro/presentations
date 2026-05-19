@@ -188,7 +188,7 @@ a {
 }
 
 .shower {
-    color: #000;
+    color: #ffffff;
     counter-reset: slide;
     font: 25px/2 PT Sans, sans-serif;
     -webkit-print-color-adjust: exact;
@@ -246,7 +246,7 @@ a {
     padding: 106px 100px 0;
     width: 1024px;
     height: 640px;
-    background: #fff;
+    background: #1b1b1b;
     font-size: 25px
 }
 
@@ -266,8 +266,12 @@ a {
 
 .slide h2 {
     margin-bottom: 34px;
-    color: #585a5e;
+    color: #ffffff;
     font: 700 50px/1 PT Sans Narrow, sans-serif
+}
+
+.slide h3 {
+    color: #868686;
 }
 
 .slide p {
