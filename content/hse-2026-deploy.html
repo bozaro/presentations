@@ -1,6 +1,7 @@
 ---
 title: Как развернуть приложение?
 theme: hse
+highlightTheme: dracula
 ---
 <section class="slide">
     <h2 class="shout">Контейнеры и виртуальные машины</h2>
@@ -178,9 +179,28 @@ RUN apt install -y golang
 </section>
 
 <section class="slide">
-    <h2>Kubernetes &mdash; среда для контейнеров</h2>
-
+    <h2>Kubernetes (K8S) &mdash; среда для контейнеров</h2>
+    <img src="kubernetes.png" style="width: 100%;" />
 </section>
+
+<section class="slide">
+    <h2>Как запустить контейнер в Kubernetes?</h2>
+    <h3>Описание Pod-а <a href="https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/pods/simple-pod.yaml">pods/simple-pod.yaml</a></h3>
+    <pre><code class="yaml" style="font-size: 75%">apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    ports:
+    - containerPort: 80</code></pre>
+    <h3>Создание Pod-а</h3>
+    <pre><code class="bash" style="font-size: 75%">kubectl apply -f https://k8s.io/examples/pods/simple-pod.yaml</code></pre>
+    <footer>https://kubernetes.io/docs/concepts/workloads/pods/</footer>
+</section>
+
 2. Kubernetes
 - Kubernetes - стандартизированная среда для выполнения контейнеров.
 - CI -> Docker Image -> Docker Registry -> Kubernetes.
