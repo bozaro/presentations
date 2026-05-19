@@ -247,24 +247,31 @@ a {
     width: 1024px;
     height: 640px;
     background: #1b1b1b;
-    font-size: 25px
+    font-size: 25px;
+        background-image: url(../images/ridetech.png);
+        background-repeat: no-repeat;
+        background-size: 100px;
+        background-position: left 50px bottom 30px;
 }
 
+section.theme {
+    background-image: url(../images/ridetech.png), url(../images/back-tr.svg), url(../images/back-bl.svg);
+    background-size: 100px, 350px, 350px;
+    background-position: left 50px bottom 30px, right top, bottom left;
+    background-repeat: no-repeat;
+}
 .slide::after {
     position: absolute;
-    top: 0;
-    right: 100px;
-    padding-top: 15px;
-    width: 50px;
-    height: 100px;
-    background: url(../images/ribbon.svg) no-repeat;
-    color: #fff;
+    bottom: 30px;
+        right: 50px;
+        color: #696969;
     counter-increment: slide;
     content: counter(slide);
     text-align: center
 }
 
 .slide h2 {
+    text-align: center;
     margin-bottom: 34px;
     color: #ffffff;
     font: 700 50px/1 PT Sans Narrow, sans-serif
@@ -274,6 +281,9 @@ a {
     color: #868686;
 }
 
+.slide dt {
+    color: #9ded12 !important;
+}
 .slide p {
     margin-bottom: 1em
 }
@@ -285,7 +295,7 @@ a {
 .slide a {
     background: -webkit-gradient(linear, left bottom, left top, color-stop(.09em, currentColor), color-stop(.09em, transparent)) repeat-x;
     background: linear-gradient(to top, currentColor .09em, transparent .09em) repeat-x;
-    color: #4b86c2
+    color: #9ded12
 }
 
 .slide b,
@@ -686,11 +696,11 @@ a {
     height: 0;
     -webkit-box-sizing: content-box;
     box-sizing: content-box;
-    border: 10px solid #4b86c2;
+    border: 10px solid #696969;
     border-right-color: transparent;
     -webkit-transition: width .2s linear;
     transition: width .2s linear;
-    clip: rect(10px, 1044px, 20px, 20px)
+    clip: rect(17px, 1044px, 20px, 20px)
 }
 
 .progress[style*='100%'] {
