@@ -7,14 +7,25 @@
 @charset "UTF-8";
 
 @font-face {
-    font-family: PT Sans;
-    src: url(../fonts/pt-sans-regular.woff) format("woff")
+    font-weight: 700;
+    font-family: YS Geo;
+    src: url(../fonts/ysgeo-medium.ttf) format("truetype")
+}
+
+@font-face {
+    font-family: YS Geo;
+    src: url(../fonts/ysgeo-regular.ttf) format("truetype")
 }
 
 @font-face {
     font-weight: 700;
-    font-family: PT Sans;
-    src: url(../fonts/pt-sans-bold.woff) format("woff")
+    font-family: YS Compressed;
+    src: url(../fonts/yscompressed-bold.otf) format("opentype")
+}
+
+@font-face {
+    font-family: YS Compressed;
+    src: url(../fonts/yscompressed-regular.otf) format("opentype")
 }
 
 @font-face {
@@ -190,7 +201,7 @@ a {
 .shower {
     color: #ffffff;
     counter-reset: slide;
-    font: 25px/2 PT Sans, sans-serif;
+    font: 25px/2 YS Geo, sans-serif;
     -webkit-print-color-adjust: exact;
     -webkit-text-size-adjust: none;
     -moz-text-size-adjust: none;
@@ -274,11 +285,12 @@ section.theme {
     text-align: center;
     margin-bottom: 34px;
     color: #ffffff;
-    font: 700 50px/1 PT Sans Narrow, sans-serif
+    font: 700 50px/1 YS Compressed, sans-serif
 }
 
 .slide h3 {
     color: #868686;
+    font-family: YS Compressed, sans-serif
 }
 
 .slide dt {
@@ -576,6 +588,11 @@ section.theme {
     font-size: 150px;
     -webkit-transform: translateY(-50%);
     transform: translateY(-50%)
+}
+
+.slide h2.shout {
+    font-family: YS Geo;
+    font-weight: normal;
 }
 
 .slide .shout a {
