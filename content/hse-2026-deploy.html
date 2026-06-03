@@ -185,7 +185,9 @@ RUN apt install -y golang
 
 <section class="slide">
     <h2>Как запустить контейнер в Kubernetes?</h2>
-    <h3>Описание Pod-а <a href="https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/pods/simple-pod.yaml">pods/simple-pod.yaml</a></h3>
+    <h3>Описание Pod-а <a
+            href="https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/pods/simple-pod.yaml">pods/simple-pod.yaml</a>
+    </h3>
     <pre><code class="yaml" style="font-size: 75%">apiVersion: v1
 kind: Pod
 metadata:
@@ -365,8 +367,8 @@ spec:
 
 <section class="slide">
     <h2>Конфигурация снаружи Pod-а</h2>
-{{< code file="hse-2026-deploy/configmap.yaml" language="yaml" style="font-size: 75%">}}
-    <mark>TODO: Добавить пример конфигурации через ConfigMap</mark>
+    {{< code file="hse-2026-deploy/configmap.yaml" language="yaml" style="font-size: 75%">}}
+        <mark>TODO: Добавить пример конфигурации через ConfigMap</mark>
 </section>
 
 <section class="slide">
@@ -448,6 +450,66 @@ data:
 
 <section class="slide theme">
     <h2 class="shout">Настройка выкатки в Yandex Cloud</h2>
+</section>
+
+<section class="slide">
+    <h2>Создание ресурсов в облаке</h2>
+    <p>Для создания ресурсов в облаке есть несколько подходов:</p>
+    <ul>
+        <li>Создание ресурсов вручную через UI</li>
+        <li>Создание ресурсов через API/cli</li>
+        <li>Создание ресурсов через Terraform</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Terraform</h2>
+    <p>Terraform позволяет декларативно объявить желаемое состояние и привести ресурсы облака к нему.</p>
+    <p>Terraform позволяет в одном состоянии объединить ресурсы разных провайдеров.</p>
+    <p>Есть провайдеры для всех популярных поставщиков облачных услуг и не только.</p>
+</section>
+
+<section class="slide">
+    <h2>Terraform</h2>
+    <dl>
+        <dt>Описание состояния Terraform</dt>
+        <dd>Файлы с расширением <code>.tf</code>.
+            Они декларативно описывают целевое состояние ресурсов в облаке.
+            Обычно их хранят в какой-либо системе контроля версий (например в Git).</dd>
+        <dt>Управляемые ресурсы</dt>
+        <dd>Ресурсы, которые управляются и создаются средствами Terraform.</dd>
+        <dt>Внутренне состояние Terraform</dt>
+        <dd>Terraform хранит внутренне состояние в файлах с расширением <code>.tfstate</code>. Оно нужно, как минимум,
+            для соответствия описания и управляемых ресурсов. Обычно оно хранится в общем разделяемом хранилище
+            (например в S3).</dd>
+    </dl>
+</section>
+
+<section class="slide">
+    <h2>Разворачивание в Yandex Cloud</h2>
+    <h3>Подготовка</h3>
+    <p>Для использования Terraform нужно будет создать его окружение через cli.</p>
+    <ul>
+        <li>Создание S3-хранилища для хранения Terraform-состояния.</li>
+        <li>Создание учетной записи для доступа к S3-хранилищу.</li>
+    </ul>
+    <h3>Развертывание</h3>
+    <p>При помощи Terraform развернём все остальные ресурсы.</p>
+</section>
+
+<section class="slide">
+    <h2>Создаём S3-хранилище и облако</h2>
+    <mark>TODO: Добавить инструкцию по созданию S3-хранилища и облака</mark>
+    <div class="important">
+        <p>В боевом окружении еще нужно настроить хранилище блокировок, чтобы не было конфликта
+            одновременного изменения состояний.</p>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Разворачиваем ресурсы из Terraform</h2>
+    <mark>TODO: Добавить ссылку на состояние Terraform</mark>
+    <mark>TODO: Добавить инструкцию по развертыванию ресурсов из Terraform</mark>
 </section>
 
 <section class="slide">
