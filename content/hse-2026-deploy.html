@@ -304,7 +304,30 @@ spec:
 
 <section class="slide">
     <h2>Указываем, какие ресурсы нужны Pod-ам</h2>
-    <mark>TODO: Добавить пример информацию о ресурсах</mark>
+    <ul>
+        <li>У контейнеров Pod-а задаются <code>requests</code> и <code>limits</code>.</li>
+        <li>Значение <code>requests</code> учитываются при выборе ноды, на которую будет селиться Pod.</li>
+        <li>Значение <code>limits</code> задаёт лимиты потребления. Оно не учитываются при выборе ноды, на которую будет селиться Pod.</li>
+        <li>Из коробки есть ресурсы: <code>cpu</code>, <code>memory</code>, <code>ephemeral-storage</code>, <code>hugepages-&lt;size&gt;</size></code></li>
+        <li>От указанных ресурсов зависит приоритет Pod-а.</li>
+    </ul>
+</section>
+
+<section class="slide">
+    <h2>Указываем, какие ресурсы нужны Pod-ам</h2>
+        <pre><code class="yaml" style="font-size: 75%">apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-resources-demo
+  namespace: pod-resources-example
+spec:
+  resources:
+    limits:
+      cpu: "1"
+      memory: "200Mi"
+    requests:
+      cpu: "1"
+      memory: "100Mi"</code></pre>
 </section>
 
 <section class="slide">
@@ -368,7 +391,26 @@ spec:
 <section class="slide">
     <h2>Конфигурация снаружи Pod-а</h2>
     {{< code file="hse-2026-deploy/configmap.yaml" language="yaml" style="font-size: 75%">}}
-        <mark>TODO: Добавить пример конфигурации через ConfigMap</mark>
+</section>
+
+<section class="slide">
+    <h2>Конфигурация снаружи Pod-а</h2>
+    {{< code file="hse-2026-deploy/pod-configmap.yaml" language="yaml" style="font-size: 75%">}}
+</section>
+
+<section class="slide">
+    <h2>Конфигурация снаружи Pod-а</h2>
+    <h3>Запускаем</h3>
+    <pre><code class="bash">kubectl delete pod/nginx --ignore-not-found=true
+kubectl apply -f pod-configmap.yaml
+kubectl apply -f configmap.yaml
+kubectl port-forward pods/nginx 5000:80
+    </code></pre>
+    <h3>Проверяем</h3>
+    <pre><code class="base">curl http://localhost:5000
+
+&lt;html&gt;body&gt;&lt;h1&gt;Hello, world!!!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;
+</code></pre>
 </section>
 
 <section class="slide">
