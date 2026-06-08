@@ -206,9 +206,15 @@ spec:
 <section class="slide">
     <h2>Как запустить контейнер в Kubernetes?</h2>
     <pre><code class="bash" style="font-size: 75%">kubectl get pods
+kubectl get pod nginx -o yaml
 kubectl describe pod nginx
+kubectl exec -it pods/nginx -- bash
 kubectl logs nginx
 kubectl delete pod nginx</code></pre>
+    <h3>kubectl get pods</h3>
+    <pre><code class="text" style="font-size: 75%">NAME    READY   STATUS    RESTARTS   AGE
+nginx   1/1     Running   0          28m
+</code></pre>
 </section>
 
 <section class="slide">
@@ -307,15 +313,18 @@ spec:
     <ul>
         <li>У контейнеров Pod-а задаются <code>requests</code> и <code>limits</code>.</li>
         <li>Значение <code>requests</code> учитываются при выборе ноды, на которую будет селиться Pod.</li>
-        <li>Значение <code>limits</code> задаёт лимиты потребления. Оно не учитываются при выборе ноды, на которую будет селиться Pod.</li>
-        <li>Из коробки есть ресурсы: <code>cpu</code>, <code>memory</code>, <code>ephemeral-storage</code>, <code>hugepages-&lt;size&gt;</size></code></li>
+        <li>Значение <code>limits</code> задаёт лимиты потребления. Оно не учитываются при выборе ноды, на которую будет
+            селиться Pod.</li>
+        <li>Из коробки есть ресурсы: <code>cpu</code>, <code>memory</code>, <code>ephemeral-storage</code>,
+            <code>hugepages-&lt;size&gt;</size></code>
+        </li>
         <li>От указанных ресурсов зависит приоритет Pod-а.</li>
     </ul>
 </section>
 
 <section class="slide">
     <h2>Указываем, какие ресурсы нужны Pod-ам</h2>
-        <pre><code class="yaml" style="font-size: 75%">apiVersion: v1
+    <pre><code class="yaml" style="font-size: 75%">apiVersion: v1
 kind: Pod
 metadata:
   name: pod-resources-demo
@@ -443,7 +452,19 @@ kubectl port-forward pods/nginx 5000:80
 
 <section class="slide">
     <h2>Шпаргалки по Kubernetes</h2>
-    <mark>TODO: Добавить шпаргалки по Kubernetes</mark>
+    <dl>
+        <dt><a href="https://kubernetes.io/docs/reference/kubectl/quick-reference/">https://kubernetes.io/docs/reference/kubectl/quick-reference/</a></dt>
+        <dd>Официальная документация по <code>kubectl</code></dd>
+
+        <dt>Headlamp (<a
+                href="https://github.com/kubernetes-sigs/headlamp">https://github.com/kubernetes-sigs/headlamp</a></dt>
+        <dd>Универсальный и расширяемый пользовательский интерфейс к Kubernetes.</dd>
+
+        <dt>lens (<a href="https://github.com/lensapp/lens">https://github.com/lensapp/lens</a>)</dt>
+        <dd>Автономное приложение, не требующее установки чего-либо внутри кластера. Проект позиционируется как
+            полноценная интегрированная среда разработки (IDE) для Kubernetes.
+        </dd>
+    </dl>
 </section>
 
 <section class="slide theme">
