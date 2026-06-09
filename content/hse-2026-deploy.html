@@ -399,12 +399,12 @@ spec:
 
 <section class="slide">
     <h2>Конфигурация снаружи Pod-а</h2>
-    {{< code file="hse-2026-deploy/configmap.yaml" language="yaml" style="font-size: 75%">}}
+{{< code file="hse-2026-deploy/configmap.yaml" language="yaml" style="font-size: 75%">}}
 </section>
 
 <section class="slide">
     <h2>Конфигурация снаружи Pod-а</h2>
-    {{< code file="hse-2026-deploy/pod-configmap.yaml" language="yaml" style="font-size: 75%">}}
+{{< code file="hse-2026-deploy/pod-configmap.yaml" language="yaml" style="font-size: 70%">}}
 </section>
 
 <section class="slide">
@@ -420,6 +420,12 @@ kubectl port-forward pods/nginx 5000:80
 
 &lt;html&gt;body&gt;&lt;h1&gt;Hello, world!!!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;
 </code></pre>
+</section>
+
+<section class="slide">
+    <h2>Доступ к Pod-у снаружи Kubernetes-кластера</h2>
+    <h3>Объединяем Pod-ы в Service</h3>
+{{< code file="hse-2026-deploy/service.yaml" language="yaml" style="font-size: 75%">}}
 </section>
 
 <section class="slide">
@@ -451,19 +457,42 @@ kubectl port-forward pods/nginx 5000:80
 </section>
 
 <section class="slide">
+    <h2>Карманный Kubernetes</h2>
+    <h3>Установка minikube</h3>
+    <p><a href="https://kubernetes.io/ru/docs/tasks/tools/install-minikube/">https://kubernetes.io/ru/docs/tasks/tools/install-minikube/</a></p>
+    <pre><code class="bash" style="font-size: 75%">minikube start
+minikube status
+minikube addons enable dashboard
+minikube addons enable metrics-server
+minikube addons enable ingress
+minikube addons enable ingress-dns
+</code></pre>
+    <p>Настройка Ingress DNS: <a
+            href="https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/">https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/</a>
+    </p>
+    <h3>Использование minikube</h3>
+    <pre><code class="bash" style="font-size: 75%">minikube dashboard
+curl http://hello-john.test
+</code></pre>
+</section>
+
+<section class="slide">
     <h2>Шпаргалки по Kubernetes</h2>
     <dl>
-        <dt><a href="https://kubernetes.io/docs/reference/kubectl/quick-reference/">https://kubernetes.io/docs/reference/kubectl/quick-reference/</a></dt>
+        <dt><a
+                href="https://kubernetes.io/docs/reference/kubectl/quick-reference/">https://kubernetes.io/docs/reference/kubectl/quick-reference/</a>
+        </dt>
         <dd>Официальная документация по <code>kubectl</code></dd>
+
+        <dt>Dashboard (<a
+                href="https://github.com/kubernetes-retired/dashboard">https://github.com/kubernetes-retired/dashboard</a>
+        </dt>
+        <dd>Это веб-интерфейс для управления и мониторинга кластеров Kubernetes. Именно он используется в minikube.
+            Deprecated.</dd>
 
         <dt>Headlamp (<a
                 href="https://github.com/kubernetes-sigs/headlamp">https://github.com/kubernetes-sigs/headlamp</a></dt>
         <dd>Универсальный и расширяемый пользовательский интерфейс к Kubernetes.</dd>
-
-        <dt>lens (<a href="https://github.com/lensapp/lens">https://github.com/lensapp/lens</a>)</dt>
-        <dd>Автономное приложение, не требующее установки чего-либо внутри кластера. Проект позиционируется как
-            полноценная интегрированная среда разработки (IDE) для Kubernetes.
-        </dd>
     </dl>
 </section>
 
