@@ -1,10 +1,10 @@
 {{- $name := .Get "file" }}
-{{- $file := printf "static/%s" $name | readFile }}
+{{- $file := printf "static/%s" $name | readFile}}
 {{- $lang := .Get "language" }}
 {{- $style := .Get "style" }}
 <figure>
     {{- with .Get "label" }}
     <figcaption><a href="/{{ $name }}">{{ . }}</a>:</figcaption>
     {{- end }}
-    <pre><code class="{{ $lang }}" {{- with $style }} style="{{ . }}"{{ end }}>{{ $file }}</code></pre>
+    <pre><code class="{{ $lang }}" {{- with $style }} style="{{ . }}"{{ end }}>{{ replace (html $file) "\n" "<br/>" | safe.HTML }}</code></pre>
 </figure>

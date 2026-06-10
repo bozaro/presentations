@@ -399,12 +399,12 @@ spec:
 
 <section class="slide">
     <h2>Конфигурация снаружи Pod-а</h2>
-{{< code file="hse-2026-deploy/configmap.yaml" language="yaml" style="font-size: 75%">}}
+    {{< code file="hse-2026-deploy/configmap.yaml" language="yaml" style="font-size: 75%">}}
 </section>
 
 <section class="slide">
     <h2>Конфигурация снаружи Pod-а</h2>
-{{< code file="hse-2026-deploy/pod-configmap.yaml" language="yaml" style="font-size: 70%">}}
+    {{< code file="hse-2026-deploy/pod-configmap.yaml" language="yaml" style="font-size: 70%">}}
 </section>
 
 <section class="slide">
@@ -425,12 +425,50 @@ kubectl port-forward pods/nginx 5000:80
 <section class="slide">
     <h2>Доступ к Pod-у снаружи Kubernetes-кластера</h2>
     <h3>Объединяем Pod-ы в Service</h3>
-{{< code file="hse-2026-deploy/service.yaml" language="yaml" style="font-size: 75%">}}
+    {{< code file="hse-2026-deploy/service.yaml" language="yaml" style="font-size: 75%">}}
+</section>
+
+<section class="slide">
+    <h2>Service</h2>
+    <ul class="compact">
+        <li>Service работает на уровне L3.</li>
+        <li>Pod-ы сервиса определяются через <code>selector</code>.</li>
+        <li>Service пл-умолчанию "видит" только READY Pod-ы.</li>
+        <li>По умолчанию у сервиса есть отдельный IP.</li>
+        <li>Service создаёт DNS-записи:
+            <ul style="font-size: 80%">
+                <li>A/AAAA<br />
+                    <code><i>srv</i>.<i>namespace</i>.svc.<i>cluster-domain.example</i></code><br />
+                    <code>nginx.default.svc.cluster.local</code>
+                </li>
+                <li>SRV<br />
+                    <code><i>_port-name</i>.<i>_protocol</i>.<i>srv</i>.<i>namespace</i>.svc.<i>cluster-domain.example</i></code><br />
+                    <code>_http._tcp.nginx.default.svc.cluster.local</code>
+                </li>
+            </ul>
+        </li>
+    </ul>
 </section>
 
 <section class="slide">
     <h2>Доступ к Pod-у снаружи Kubernetes-кластера</h2>
-    <mark>TODO: Добавить пример Service и Ingress</mark>
+    <h3>Объявляем точку входа снаружи кластера</h3>
+    {{< code file="hse-2026-deploy/ingress.yaml" language="yaml" style="font-size: 75%">}}
+</section>
+
+<section class="slide">
+    <h2>Доступ к Pod-у снаружи Kubernetes-кластера</h2>
+    <h3>Объявляем точку входа снаружи кластера</h3>
+    {{< code file="hse-2026-deploy/ingress-rules.yaml" language="yaml" style="font-size: 75%">}}
+</section>
+
+<section class="slide">
+    <h2>Ingress</h2>
+    <ul>
+        <li>Ingress работает на уровне L7 с HTTP-протоколом.</li>
+        <li>Pod-ы сервиса определяются через <code>Service</code>.</li>
+        <li>В кластере может быть несколько видов Ingress (<code>ingressClassName</code>)</li>
+    </ul>
 </section>
 
 <section class="slide">
@@ -459,7 +497,9 @@ kubectl port-forward pods/nginx 5000:80
 <section class="slide">
     <h2>Карманный Kubernetes</h2>
     <h3>Установка minikube</h3>
-    <p><a href="https://kubernetes.io/ru/docs/tasks/tools/install-minikube/">https://kubernetes.io/ru/docs/tasks/tools/install-minikube/</a></p>
+    <p><a
+            href="https://kubernetes.io/ru/docs/tasks/tools/install-minikube/">https://kubernetes.io/ru/docs/tasks/tools/install-minikube/</a>
+    </p>
     <pre><code class="bash" style="font-size: 75%">minikube start
 minikube status
 minikube addons enable dashboard
