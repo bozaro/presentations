@@ -10,7 +10,7 @@ highlightTheme: dracula
 <section class="slide">
     <h2>Сервисы и физическое железо</h2>
     <p>Обычно физический сервер слишком большой для одного экземпляра сервиса.</p>
-    <p>Есть потребность запускать несколько разных сервисов на одном физичесом сервере.</p>
+    <p>Есть потребность запускать несколько разных сервисов на одном физическом сервере.</p>
     <div style="font-size: 80%; position: absolute; bottom: 50px; right: 50px">
         <p>Сервер xFusion 1288H V7 8SFF (1U)</p>
         <ul>
@@ -51,9 +51,9 @@ highlightTheme: dracula
     </ul>
     <h3>Плюсы</h3>
     <ul class="compact">
-        <li>Можно запустить другую операционную систему (к примеру Windows, Linux или FreeBSD)</li>
+        <li>Можно запустить другую операционную систему (например Windows, Linux или FreeBSD)</li>
         <li>Высокая степень изоляции</li>
-        <li>Можно эмулировать другую архитектуру (к примеру PlayStation 2)</li>
+        <li>Можно эмулировать другую архитектуру (например PlayStation 2)</li>
     </ul>
     <h3>Минусы</h3>
     <ul class="compact">
@@ -247,7 +247,7 @@ nginx   1/1     Running   0          28m
     <h3>Конфигурация приложения</h3>
     <dl>
         <dt>Переменные окружения</dt>
-        <dd>У Pod-а можно переопределить переменные окружения. Так же через них можно прокинуть часть данных о Pod-е в
+        <dd>У Pod-а можно переопределить переменные окружения. Также через них можно прокинуть часть данных о Pod-е в
             контейнер
             (https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/).
         </dd>
@@ -263,7 +263,7 @@ nginx   1/1     Running   0          28m
     <h3>Ресурсы для доступа к Pod-у</h3>
     <dl>
         <dt>Service</dt>
-        <dd>Объект, который позволяет адресовать группу Pod-ов.</dd>
+        <dd>Объект, который позволяет запрашивать данные от группы Pod-ов.</dd>
         <dt>Ingress</dt>
         <dd>Объект, который позволяет достучаться к Pod-у снаружи Kubernetes-кластера.</dd>
     </dl>
@@ -312,9 +312,9 @@ spec:
     <h2>Указываем, какие ресурсы нужны Pod-ам</h2>
     <ul>
         <li>У контейнеров Pod-а задаются <code>requests</code> и <code>limits</code>.</li>
-        <li>Значение <code>requests</code> учитываются при выборе ноды, на которую будет селиться Pod.</li>
-        <li>Значение <code>limits</code> задаёт лимиты потребления. Оно не учитываются при выборе ноды, на которую будет
-            селиться Pod.</li>
+        <li>Значение <code>requests</code> учитываются при выборе ноды, на которую будет помещаться Pod.</li>
+        <li>Значение <code>limits</code> задаёт лимиты потребления. Оно не учитывается при выборе ноды, на которую будет
+            помещаться Pod.</li>
         <li>Из коробки есть ресурсы: <code>cpu</code>, <code>memory</code>, <code>ephemeral-storage</code>,
             <code>hugepages-&lt;size&gt;</size></code>
         </li>
@@ -452,7 +452,7 @@ kubectl port-forward pods/nginx 5000:80
 
 <section class="slide">
     <h2>Доступ к Pod-у снаружи Kubernetes-кластера</h2>
-    <h3>Объявляем точку входа снаружи кластера</h3>
+    <h3>Настройка маршрутизации с помощью Ingress</h3>
     {{< code file="hse-2026-deploy/ingress.yaml" language="yaml" style="font-size: 75%">}}
 </section>
 
@@ -525,8 +525,7 @@ curl http://hello-john.test
         <dd>Официальная документация по <code>kubectl</code></dd>
 
         <dt>Dashboard (<a
-                href="https://github.com/kubernetes-retired/dashboard">https://github.com/kubernetes-retired/dashboard</a>
-        </dt>
+                href="https://github.com/kubernetes-retired/dashboard">https://github.com/kubernetes-retired/dashboard</a>)</dt>
         <dd>Это веб-интерфейс для управления и мониторинга кластеров Kubernetes. Именно он используется в minikube.
             Deprecated.</dd>
 
@@ -541,7 +540,7 @@ curl http://hello-john.test
 </section>
 <section class="slide">
     <h2>Откуда берутся ресурсы для Kubernetes?</h2>
-    <p>При раскатки приложения ресурсы для Kubernetes обычно генерируются каким-либо образом.</p>
+    <p>При раскатке приложений ресурсы для Kubernetes обычно генерируются автоматически.</p>
     <p>Применение ресурсов через <code>kubectl apply</code> имеет существенный недостаток: никто не удаляет более
         ненужные ресурсы.</p>
     <p>Стандартом де-факто для создания "приложений" в Kubernetes является Helm</p>
