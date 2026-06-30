@@ -1,0 +1,166 @@
+<!doctype html><html lang=ru><head><title>Как развернуть приложение?</title><meta charset=utf-8><meta http-equiv=x-ua-compatible content="ie=edge"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=generator content="Hugo 0.119.0"><link rel=icon href=../favicon.png><link rel=stylesheet href=../shower/themes/hse/styles/screen-16x10.css><link rel=stylesheet href=../css/style.css><link rel=stylesheet href=../highlight.js/styles/dracula.min.css><script src=../jquery/jquery.min.js></script>
+<script src=../jquery-qrcode/jquery.qrcode.min.js></script></head><body class="shower list no-math"><header class=caption><h1>Как развернуть приложение?</h1><p>Навроцкий Артем</p></header><section class="slide clear" style=padding:0 id=cover><h2 class=shout>Как развернуть приложение?</h2><div class="place bottom right" style=padding:50px>Навроцкий Артем</div></section><section class="slide theme"><h2 class=shout>Контейнеры и виртуальные машины</h2></section><section class=slide><h2>Сервисы и физическое железо</h2><p>Обычно физический сервер слишком большой для одного экземпляра сервиса.</p><p>Есть потребность запускать несколько разных сервисов на одном физическом сервере.</p><div style=font-size:80%;position:absolute;bottom:50px;right:50px><p>Сервер xFusion 1288H V7 8SFF (1U)</p><ul><li>CPU 2x Intel Xeon Gold 6430 (32C 60M Cache 2.10 GHz)</li><li>RAM 12x 64GB DDR5 RDIMM 4800MHz</li><li>HDD 2x SSD 480GB SATA 2,5" (до 8 HDD 2.5'' SFF)</li></ul><p>Итого: 64 ядра (128 потоков исполнения) и 768GB RAM</p></div></section><section class=slide><h2>Несколько сервисов на одном сервере</h2><p>Технически можно установить несколько сервисов на одном сервере.</p><ul><li>Общая операционная система, которую очень больно обновлять</li><li>Проблема изоляции ресурсов</li><li>Проблема общих зависимостей</li><li>Проблема воспроизводимости окружения</li></ul></section><section class=slide><h2>Какие пути решения?</h2><h3>Виртуализация</h3><p>Внутри гипервизора запускаем несколько виртуальных хостов.</p><p>Каждый виртуальный хост притворяется физическим хостом.</p><h3>Контейнеризация</h3><p>Внутри операционной системы приложения изолируются в отдельных контейнерах.</p><p>Каждый процесс контейнера является обычным процессом операционной системы.</p></section><section class=slide><h2>Виртуализация</h2><h3>Важно</h3><ul class=compact><li>Диск - блочный файл/устройство</li></ul><h3>Плюсы</h3><ul class=compact><li>Можно запустить другую операционную систему (например Windows, Linux или FreeBSD)</li><li>Высокая степень изоляции</li><li>Можно эмулировать другую архитектуру (например PlayStation 2)</li></ul><h3>Минусы</h3><ul class=compact><li>Высокие накладные расходы</li></ul></section><section class=slide><h2>Контейнеризация</h2><h3>Важно</h3><ul class=compact><li>Диск - каталог на хостовой машине</li></ul><h3>Плюсы</h3><ul class=compact><li>Минимальные накладные расходы</li></ul><h3>Минусы</h3><ul class=compact><li>Общее ядро операционной системы</li><li>Более слабая изоляция ресурсов (например: общий дисковый кэш)</li></ul></section><section class=slide><h2>Docker</h2><p>Контейнеры существуют очень давно, но до Docker-а не было простой инфраструктуры для работы с контейнерами.</p><p>Docker предоставил законченное решение для:</p><ul class=compact><li>Сборки контейнеров</li><li>Обмена и переиспользования контейнеров</li><li>Запуска контейнеров</li></ul><p>Docker-контейнеры поддерживают операционные системы:</p><ul class=compact><li>Linux</li><li>Windows</li></ul></section><section class=slide><h2>Docker-образ</h2><pre><code class=bash style=font-size:75%>git clone https://github.com/docker/docker-gs-ping .
+docker build --tag docker-gs-ping .</code></pre><h3>Dockerfile</h3><pre><code class=dockerfile style=font-size:75%># syntax=docker/dockerfile:1
+FROM golang:1.19
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY *.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /docker-gs-ping
+EXPOSE 8080
+CMD [ "/docker-gs-ping" ]</code></pre><footer>https://docs.docker.com/guides/golang/build-images/</footer></section><section class=slide><h2>Docker-образ (multistage)</h2><pre><code class=bash style=font-size:75%>git clone https://github.com/docker/docker-gs-ping .
+docker build --tag docker-gs-ping -f Dockerfile.multistage .</code></pre><h3>Dockerfile.multistage</h3><pre><code class=dockerfile style=font-size:75%># syntax=docker/dockerfile:1
+FROM golang:1.19 AS build-stage
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY *.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /docker-gs-ping
+
+FROM gcr.io/distroless/base-debian11 AS build-release-stage
+WORKDIR /
+COPY --from=build-stage /docker-gs-ping /docker-gs-ping
+EXPOSE 8080
+USER nonroot:nonroot
+ENTRYPOINT ["/docker-gs-ping"]</code></pre></section><section class=slide><h2>Кэширование сборки docker-образов</h2><h3>Не правильно</h3><pre><code class=dockerfile style=font-size:80%>RUN apt update
+RUN apt install -y golang
+</code></pre><div class=next><h3>Правильно</h3><pre><code class=dockerfile style=font-size:80%>RUN apt update && apt install -y golang</code></pre></div><div class=next><h3>Оптимально</h3><pre><code class=dockerfile style=font-size:80%>RUN --mount=type=cache,sharing=private,target=/var/cache/apt \
+    --mount=type=tmpfs,target=/tmp \
+    apt update && apt install -y golang && apt-get clean all</code></pre></div></section><section class=slide><h2>Что внутри образа?</h2><img src=docker-image.avif style=width:75%></section><section class=slide><h2>Подведём итоги</h2><ul><li>OCI Image &mdash; вырос из Docker Image и является его развитием</li><li>Сборки порождают слои, каждый из которых используется только для чтения (<a href=https://docs.kernel.org/filesystems/overlayfs.html>overlayfs</a>)</li><li>OCI Image содержит метаданные: переменные окружения, команда выполнения, порты и т.п., которые используются
+как значения по-умолчанию при запуске контейнера</li><li>В контейнер можно передавать конфигурацию через модификацию переменных окружения и монтирования
+каталогов/файлов при его запуске</li></ul></section><section class=slide><h2>Шпаргалки по Docker</h2><h3>https://docker.how/</h3><h3>https://docs.docker.com/get-started/docker_cheatsheet.pdf</h3></section><section class="slide theme"><h2 class=shout>Kubernetes</h2></section><section class=slide><h2>Kubernetes (K8S) &mdash; среда для контейнеров</h2><img src=kubernetes.png style=width:100%></section><section class=slide><h2>Как запустить контейнер в Kubernetes?</h2><h3>Описание Pod-а <a href=https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/pods/simple-pod.yaml>pods/simple-pod.yaml</a></h3><pre><code class=yaml style=font-size:75%>apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    ports:
+    - containerPort: 80</code></pre><h3>Создание Pod-а</h3><pre><code class=bash style=font-size:75%>kubectl apply -f https://k8s.io/examples/pods/simple-pod.yaml</code></pre><footer>https://kubernetes.io/docs/concepts/workloads/pods/</footer></section><section class=slide><h2>Как запустить контейнер в Kubernetes?</h2><pre><code class=bash style=font-size:75%>kubectl get pods
+kubectl get pod nginx -o yaml
+kubectl describe pod nginx
+kubectl exec -it pods/nginx -- bash
+kubectl logs nginx
+kubectl delete pod nginx</code></pre><h3>kubectl get pods</h3><pre><code class=text style=font-size:75%>NAME    READY   STATUS    RESTARTS   AGE
+nginx   1/1     Running   0          28m
+</code></pre></section><section class=slide><h2>Открытые вопросы</h2><ul><li>Какой контейнер будет использоваться для Pod-а и откуда он берётся?</li><li>Где именно будет запущен Pod?</li><li>Какие Pod-у будут выделены ресурсы?</li><li>Как достучаться до Pod-а?</li><li>Что произойдёт если удалить хост с Pod-ом?</li><li>Как передать конфигурацию в Pod?</li></ul></section><section class=slide><h2>Ресурсы в Kubernetes</h2><h3>Запуск приложения</h3><dl><dt>Pod</dt><dd>Минимальный объект в Kubernetes.</dd><dt>ReplicaSet</dt><dd>Управляет количеством однотипных Pod-ов.</dd><dt>Deployment, StatefulSet, DaemonSet</dt><dd>Объекты, которые управляют жизненным циклом контейнерных приложений.</dd></dl></section><section class=slide><h2>Ресурсы в Kubernetes</h2><h3>Конфигурация приложения</h3><dl><dt>Переменные окружения</dt><dd>У Pod-а можно переопределить переменные окружения. Также через них можно прокинуть часть данных о Pod-е в
+контейнер
+(https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/).</dd><dt>Параметры командной строки</dt><dd>Можно переопределить параметры командной строки для Pod-а.</dd><dt>Secret, ConfigMap</dt><dd>Специальные ресурсы, которые можно отобразить на файловую систему Pod-а.</dd></dl></section><section class=slide><h2>Ресурсы в Kubernetes</h2><h3>Ресурсы для доступа к Pod-у</h3><dl><dt>Service</dt><dd>Объект, который позволяет запрашивать данные от группы Pod-ов.</dd><dt>Ingress</dt><dd>Объект, который позволяет достучаться к Pod-у снаружи Kubernetes-кластера.</dd></dl></section><section class=slide><h2>Запуск Pod-ов через Deployment</h2><div style=display:flex><div style=flex:1><pre><code class=yaml style=font-size:75%>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80</code></pre></div><div style=flex:1><pre><code class=yaml style=font-size:75%>apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    ports:
+    - containerPort: 80</code></pre></div></div></section><section class=slide><h2>Указываем, какие ресурсы нужны Pod-ам</h2><ul><li>У контейнеров Pod-а задаются <code>requests</code> и <code>limits</code>.</li><li>Значение <code>requests</code> учитываются при выборе ноды, на которую будет помещаться Pod.</li><li>Значение <code>limits</code> задаёт лимиты потребления. Оно не учитывается при выборе ноды, на которую будет
+помещаться Pod.</li><li>Из коробки есть ресурсы: <code>cpu</code>, <code>memory</code>, <code>ephemeral-storage</code>,
+<code>hugepages-&lt;size></size></code></li><li>От указанных ресурсов зависит приоритет Pod-а.</li></ul></section><section class=slide><h2>Указываем, какие ресурсы нужны Pod-ам</h2><pre><code class=yaml style=font-size:75%>apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-resources-demo
+  namespace: pod-resources-example
+spec:
+  resources:
+    limits:
+      cpu: "1"
+      memory: "200Mi"
+    requests:
+      cpu: "1"
+      memory: "100Mi"</code></pre></section><section class=slide><h2>Контроль жизненного цикла</h2><p>Для определения состояния Pod-а есть следующие <a href=https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/>"пробы"</a>:</p><dl><dt>readinessProbe</dt><dd>Готов ли Pod принимать пользовательскую нагрузку?</dd><dt>livenessProbe</dt><dd>Жив ли Pod?<br>Если Pod не живой, то его удалит автоматика</dd><dt>startupProbe</dt><dd>До завершения старта сервиса к нему не применяются readinessProbe и livenessProbe</dd></dl><p>Долго стартующие приложения причиняют боль страдание.</p></section><section class=slide><h2>Контроль жизненного цикла</h2><pre><code class=yaml style=font-size:75%>apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    ports:
+    - containerPort: 80
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 80
+      periodSeconds: 3</code></pre></section><section class=slide><h2>Конфигурация внутри Pod-а</h2><pre><code class=yaml style=font-size:75%>apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    command: ["nginx", "-g", "daemon off;"]
+    env:
+    - name: FOO
+      value: "bar"
+    - name: MY_POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    ports:
+    - containerPort: 80</code></pre></section><section class=slide><h2>Конфигурация снаружи Pod-а</h2><figure><pre><code class=yaml style=font-size:75%>apiVersion: v1<br>kind: ConfigMap<br>metadata:<br>  name: nginx<br>data:<br>  index.html: |<br>    &lt;html&gt;&lt;body&gt;&lt;h1&gt;Hello, world!!!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;<br>  ping.html: |<br>    &lt;html&gt;&lt;body&gt;&lt;h1&gt;Pong&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;<br></code></pre></figure></section><section class=slide><h2>Конфигурация снаружи Pod-а</h2><figure><pre><code class=yaml style=font-size:70%>apiVersion: v1<br>kind: Pod<br>metadata:<br>  name: nginx<br>  labels:<br>    app.kubernetes.io/name: nginx<br>spec:<br>  containers:<br>    - name: nginx<br>      image: nginx:1.14.2<br>      command: [&#34;nginx&#34;, &#34;-g&#34;, &#34;daemon off;&#34;]<br>      ports:<br>        - containerPort: 80<br>      volumeMounts:<br>        - name: static<br>          mountPath: &#34;/usr/share/nginx/html&#34;<br>          readOnly: true<br>  volumes:<br>    - name: static<br>      configMap:<br>        name: nginx<br></code></pre></figure></section><section class=slide><h2>Конфигурация снаружи Pod-а</h2><h3>Запускаем</h3><pre><code class=bash>kubectl delete pod/nginx --ignore-not-found=true
+kubectl apply -f pod-configmap.yaml
+kubectl apply -f configmap.yaml
+kubectl port-forward pods/nginx 5000:80
+    </code></pre><h3>Проверяем</h3><pre><code class=base>curl http://localhost:5000
+
+&lt;html&gt;body&gt;&lt;h1&gt;Hello, world!!!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;
+</code></pre></section><section class=slide><h2>Доступ к Pod-у снаружи Kubernetes-кластера</h2><h3>Объединяем Pod-ы в Service</h3><figure><pre><code class=yaml style=font-size:75%>apiVersion: v1<br>kind: Service<br>metadata:<br>  name: nginx<br>spec:<br>  ports:<br>    - name: http<br>      protocol: TCP<br>      port: 80<br>      targetPort: 80<br>  selector:<br>    app.kubernetes.io/name: nginx<br></code></pre></figure></section><section class=slide><h2>Service</h2><ul class=compact><li>Service работает на уровне L3.</li><li>Pod-ы сервиса определяются через <code>selector</code>.</li><li>Service пл-умолчанию "видит" только READY Pod-ы.</li><li>По умолчанию у сервиса есть отдельный IP.</li><li>Service создаёт DNS-записи:<ul style=font-size:80%><li>A/AAAA<br><code><i>srv</i>.<i>namespace</i>.svc.<i>cluster-domain.example</i></code><br><code>nginx.default.svc.cluster.local</code></li><li>SRV<br><code><i>_port-name</i>.<i>_protocol</i>.<i>srv</i>.<i>namespace</i>.svc.<i>cluster-domain.example</i></code><br><code>_http._tcp.nginx.default.svc.cluster.local</code></li></ul></li></ul></section><section class=slide><h2>Доступ к Pod-у снаружи Kubernetes-кластера</h2><h3>Настройка маршрутизации с помощью Ingress</h3><figure><pre><code class=yaml style=font-size:75%>apiVersion: networking.k8s.io/v1<br>kind: Ingress<br>metadata:<br>  name: nginx<br>spec:<br>  defaultBackend:<br>    service:<br>      name: nginx<br>      port:<br>        number: 80<br></code></pre></figure></section><section class=slide><h2>Доступ к Pod-у снаружи Kubernetes-кластера</h2><h3>Объявляем точку входа снаружи кластера</h3><figure><pre><code class=yaml style=font-size:75%>apiVersion: networking.k8s.io/v1<br>kind: Ingress<br>metadata:<br>  name: nginx<br>spec:<br>  rules:<br>    - host: &#34;nginx-example.test&#34;<br>      http:<br>        paths:<br>          - pathType: Prefix<br>            path: &#34;/&#34;<br>            backend:<br>              service:<br>                name: nginx<br>                port:<br>                  number: 80<br></code></pre></figure></section><section class=slide><h2>Ingress</h2><ul><li>Ingress работает на уровне L7 с HTTP-протоколом.</li><li>Pod-ы сервиса определяются через <code>Service</code>.</li><li>В кластере может быть несколько видов Ingress (<code>ingressClassName</code>)</li></ul></section><section class=slide><h2>Подведём итоги</h2><ul><li>Ресурсами управляет Deployment</li><li>Конфигурацию можно задать через ConfigMap и переменные окружения</li><li>Обязательно надо прописывать requests для Pod-а</li><li>Обязательно надо прописывать livenessProbe, readinessProbe и startupProbe</li><li>Для адресации между Pod-ами используются Service</li><li>Для адресации снаружи Kubernetes-кластера используются Ingress</li></ul></section><section class=slide><h2>Что осталось за кадром?</h2><ul><li>Pod nodeAffinity</li><li>Pod topologySpreadConstraints</li><li>HorizontalPodAutoscaler</li><li>PodDisruptionBudget</li><li>Состояние в Kubernetes: StatefulSet, Persistent Volume.</li></ul></section><section class=slide><h2>Карманный Kubernetes</h2><h3>Установка minikube</h3><p><a href=https://kubernetes.io/ru/docs/tasks/tools/install-minikube/>https://kubernetes.io/ru/docs/tasks/tools/install-minikube/</a></p><pre><code class=bash style=font-size:75%>minikube start
+minikube status
+minikube addons enable dashboard
+minikube addons enable metrics-server
+minikube addons enable ingress
+minikube addons enable ingress-dns
+</code></pre><p>Настройка Ingress DNS: <a href=https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/>https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/</a></p><h3>Использование minikube</h3><pre><code class=bash style=font-size:75%>minikube dashboard
+curl http://hello-john.test
+</code></pre></section><section class=slide><h2>Шпаргалки по Kubernetes</h2><dl><dt><a href=https://kubernetes.io/docs/reference/kubectl/quick-reference/>https://kubernetes.io/docs/reference/kubectl/quick-reference/</a></dt><dd>Официальная документация по <code>kubectl</code></dd><dt>Dashboard (<a href=https://github.com/kubernetes-retired/dashboard>https://github.com/kubernetes-retired/dashboard</a>)</dt><dd>Это веб-интерфейс для управления и мониторинга кластеров Kubernetes. Именно он используется в minikube.
+Deprecated.</dd><dt>Headlamp (<a href=https://github.com/kubernetes-sigs/headlamp>https://github.com/kubernetes-sigs/headlamp</a></dt><dd>Универсальный и расширяемый пользовательский интерфейс к Kubernetes.</dd></dl></section><section class="slide theme"><h2 class=shout>Deploy</h2></section><section class=slide><h2>Откуда берутся ресурсы для Kubernetes?</h2><p>При раскатке приложений ресурсы для Kubernetes обычно генерируются автоматически.</p><p>Применение ресурсов через <code>kubectl apply</code> имеет существенный недостаток: никто не удаляет более
+ненужные ресурсы.</p><p>Стандартом де-факто для создания "приложений" в Kubernetes является Helm</p></section><section class=slide><h2>Helm</h2><p>Helm &mdash; менеджер пакетов для Kubernetes, который упрощает установку, обновление и управление приложениями в
+кластере. Особенность &mdash; использование чартов (Helm Charts) — стандартизированных пакетов, в которых
+содержатся все необходимые ресурсы и конфигурации.</p></section><section class=slide><h2>Шаблонизатор Helm</h2><pre><code class=yaml style=font-size:75%>apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+data:
+  myvalue: "Hello World"</code></pre><p>Внутри Helm использует шаблонизатор Go Template с набором дополнительных функций (в том числе <a href=https://github.com/davecgh/go-spew>go-spew</a>).</p><p>Одна из проблем такого подхода: шаблонизатор работает с Yaml на уровне текста.</p></section><section class=slide><h2>Как всё выкатить?</h2><ul><li>Разработчик заливает изменения в main-ветку Git-а</li><li>На CI собирается Docker-образ с приложением</li><li>На CI публикуется Helm-чарт для приложения</li><li>CI устанавливает helm-чарт в Kubernetes-кластер</li></ul><h3>Пример репозитория для выкатки</h3><p><a href=https://sourcecraft.dev/organization-margosha-mmm/yandex-cloud-sample>https://sourcecraft.dev/organization-margosha-mmm/yandex-cloud-sample</a></p><p><a href=http://example.ds2607.ru/headers>http://example.ds2607.ru/headers</a></p></section><section class="slide theme"><h2 class=shout>Настройка выкатки в Yandex Cloud</h2></section><section class=slide><h2>Создание ресурсов в облаке</h2><p>Для создания ресурсов в облаке есть несколько подходов:</p><ul><li>Создание ресурсов вручную через UI</li><li>Создание ресурсов через API/cli</li><li>Создание ресурсов через Terraform</li></ul></section><section class=slide><h2>Terraform</h2><p>Terraform позволяет декларативно объявить желаемое состояние и привести ресурсы облака к нему.</p><p>Terraform позволяет в одном состоянии объединить ресурсы разных провайдеров.</p><p>Есть провайдеры для всех популярных поставщиков облачных услуг и не только.</p></section><section class=slide><h2>Terraform</h2><dl><dt>Описание состояния Terraform (state)</dt><dd>Файлы с расширением <code>.tf</code>.
+Они декларативно описывают целевое состояние ресурсов в облаке.
+Обычно их хранят в какой-либо системе контроля версий (например в Git).</dd><dt>Управляемые ресурсы (resources)</dt><dd>Ресурсы, которые управляются и создаются средствами Terraform.</dd><dt>Внутренне состояние Terraform (backend)</dt><dd>Terraform хранит внутренне состояние в файлах с расширением <code>.tfstate</code>. Оно нужно, как минимум,
+для соответствия описания и управляемых ресурсов. Обычно оно хранится в общем разделяемом хранилище
+(например в S3 + DynamoDB).</dd></dl></section><section class=slide><h2>Настройка cli для Yandex Cloud</h2><h3>Установка Yandex Cloud (CLI)</h3><ul><li>Собственно установка CLI: <a href=https://yandex.cloud/ru/docs/cli/quickstart>https://yandex.cloud/ru/docs/cli/quickstart</a></li><li>Настройка доступа:<pre><code class=bash>yc config profile create ds-2607
+yc init \
+    --federation-id bpfsm700l1chjp37egpl \
+    --username ds-2607-1</code></pre></li></ul></section><section class=slide><h2>Разворачивание в Yandex Cloud</h2><h3>Подготовка</h3><p>Для использования Terraform нужно будет создать его окружение через cli.</p><ul><li>Создание S3-хранилища для хранения Terraform-состояния.</li><li>Создание учетной записи для доступа к S3-хранилищу.</li></ul><h3>Развертывание</h3><p>При помощи Terraform развернём все остальные ресурсы.</p></section><section class=slide><h2>Создаём S3-хранилище и облако</h2><h3>Команды для cli</h3><pre><code class=bash style=font-size:80%>yc storage bucket create --name terraform-state-ds-2607-5eurjn
+yc iam service-account create --name terraform
+
+ID="$(yc iam service-account get --name terraform --jq .id)"
+GRANT="grantee-id=${ID},grant-type=grant-type-account"
+yc storage bucket update \
+  --grants "${GRANT},permission=permission-read" \
+  --grants "${GRANT},permission=permission-write"
+    </code></pre><h3>Скрипт</h3><a href="https://sourcecraft.dev/organization-margosha-mmm/yandex-cloud-sample/browse/terraform/initialize.sh?rev=master">terraform/initialize.sh</a></section><section class=slide><h2>Установка Terraform</h2><p>Удобнее устанавливать Terraform через <a href=https://github.com/tfutils/tfenv>tfenv</a>.</p><p>Это позволит избавиться от проблемы синхронизации версии Terraform.</p><p>Для работы надо выставить переменную окружения:</p><pre><code class=bash>TFENV_REMOTE=https://hashicorp-releases.yandexcloud.net</code></pre></section><section class=slide><h2>Разворачиваем ресурсы из Terraform</h2><h3>Общий алгоритм применения плана</h3><pre><code>terraform init
+terraform plan --out tfplan
+terraform apply tfplan
+    </code></pre><h3>Два terraform описания</h3><ul class=compact><li>bootstrap</li><li>stage-1</li></ul></section><section class=slide><h2>Настройка CI</h2><p>В Yandex есть сервис <a href=https://sourcecraft.net>sourcecraft.net</a> и на нём есть свой CI.</p><p>Для того, чтобы выдать права для CI на работу с Yandex Cloud нужно добавить сервисное подключение ("Настройки
+репозитория" > "Сервисные подключения")</p></section><section class=slide><h2>Ремарка про пример</h2><p>В репозитории с примером есть ряд констант, которые надо изменить:</p><ul><li>Имя Container Registry:<pre><code>yc container registry list</code></pre></li><li>Адрес Kubernetes-кластера:<pre><code>yc managed-kubernetes cluster list</code></pre></li></ul></section><section class=slide id=see-more><h2 class=shout>Спасибо за внимание!</h2></section><div class=progress></div><footer class=badge><a href=https://github.com/bozaro/presentations>Fork me on GitHub</a></footer><script src=../shower/shower.min.js></script>
+<script src=../highlight.js/highlight.js></script>
+<script>document.addEventListener("DOMContentLoaded",e=>{document.querySelectorAll("pre code").forEach(e=>{hljs.highlightBlock(e)})})</script></body></html>
