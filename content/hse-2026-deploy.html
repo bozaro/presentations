@@ -579,7 +579,8 @@ data:
     </ul>
     <h3>Пример репозитория для выкатки</h3>
     <p><a
-        href="https://sourcecraft.dev/organization-margosha-mmm/yandex-cloud-sample">https://sourcecraft.dev/organization-margosha-mmm/yandex-cloud-sample</a></p>
+            href="https://sourcecraft.dev/organization-margosha-mmm/yandex-cloud-sample">https://sourcecraft.dev/organization-margosha-mmm/yandex-cloud-sample</a>
+    </p>
     <p><a href="http://example.ds2607.ru/headers">http://example.ds2607.ru/headers</a></p>
 </section>
 
@@ -689,5 +690,20 @@ terraform apply tfplan
 <section class="slide">
     <h2>Настройка CI</h2>
     <p>В Yandex есть сервис <a href="https://sourcecraft.net">sourcecraft.net</a> и на нём есть свой CI.</p>
-    <p>Для того, чтобы выдать права для CI на работу с Yandex Cloud нужно добавить сервисное подключение ("Настройки репозитория" > "Сервисные подключения")</p>
+    <p>Для того, чтобы выдать права для CI на работу с Yandex Cloud нужно добавить сервисное подключение ("Настройки
+        репозитория" > "Сервисные подключения")</p>
+</section>
+
+<section class="slide">
+    <h2>Ремарка про пример</h2>
+    <p>В репозитории с примером есть ряд констант, которые надо изменить:</p>
+    <ul>
+        <li>Имя Container Registry:
+            <pre><code>yc container registry list</code></pre>
+        </li>
+        <li>Адрес Kubernetes-кластера:
+            <pre><code>yc managed-kubernetes cluster list</code></pre>
+        </li>
+    </ul>
+
 </section>
