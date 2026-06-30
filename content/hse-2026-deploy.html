@@ -525,7 +525,8 @@ curl http://hello-john.test
         <dd>Официальная документация по <code>kubectl</code></dd>
 
         <dt>Dashboard (<a
-                href="https://github.com/kubernetes-retired/dashboard">https://github.com/kubernetes-retired/dashboard</a>)</dt>
+                href="https://github.com/kubernetes-retired/dashboard">https://github.com/kubernetes-retired/dashboard</a>)
+        </dt>
         <dd>Это веб-интерфейс для управления и мониторинга кластеров Kubernetes. Именно он используется в minikube.
             Deprecated.</dd>
 
@@ -576,7 +577,10 @@ data:
         <li>На CI публикуется Helm-чарт для приложения</li>
         <li>CI устанавливает helm-чарт в Kubernetes-кластер</li>
     </ul>
-    <mark>TODO: Ссылка на готовый пример с приложениями на Go и Python</mark>
+    <h3>Пример репозитория для выкатки</h3>
+    <p><a
+        href="https://sourcecraft.dev/organization-margosha-mmm/yandex-cloud-sample">https://sourcecraft.dev/organization-margosha-mmm/yandex-cloud-sample</a></p>
+    <p><a href="http://example.ds2607.ru/headers">http://example.ds2607.ru/headers</a></p>
 </section>
 
 <section class="slide theme">
@@ -603,17 +607,32 @@ data:
 <section class="slide">
     <h2>Terraform</h2>
     <dl>
-        <dt>Описание состояния Terraform</dt>
+        <dt>Описание состояния Terraform (state)</dt>
         <dd>Файлы с расширением <code>.tf</code>.
             Они декларативно описывают целевое состояние ресурсов в облаке.
             Обычно их хранят в какой-либо системе контроля версий (например в Git).</dd>
-        <dt>Управляемые ресурсы</dt>
+        <dt>Управляемые ресурсы (resources)</dt>
         <dd>Ресурсы, которые управляются и создаются средствами Terraform.</dd>
-        <dt>Внутренне состояние Terraform</dt>
+        <dt>Внутренне состояние Terraform (backend)</dt>
         <dd>Terraform хранит внутренне состояние в файлах с расширением <code>.tfstate</code>. Оно нужно, как минимум,
             для соответствия описания и управляемых ресурсов. Обычно оно хранится в общем разделяемом хранилище
-            (например в S3).</dd>
+            (например в S3 + DynamoDB).</dd>
     </dl>
+</section>
+
+<section class="slide">
+    <h2>Настройка cli для Yandex Cloud</h2>
+    <h3>Установка Yandex Cloud (CLI)</h3>
+    <ul>
+        <li>Собственно установка CLI: <a
+                href="https://yandex.cloud/ru/docs/cli/quickstart">https://yandex.cloud/ru/docs/cli/quickstart</a></li>
+        <li>Настройка доступа:
+            <pre><code class="bash">yc config profile create ds-2607
+yc init \
+    --federation-id bpfsm700l1chjp37egpl \
+    --username ds-2607-1</code></pre>
+        </li>
+    </ul>
 </section>
 
 <section class="slide">
@@ -630,40 +649,45 @@ data:
 
 <section class="slide">
     <h2>Создаём S3-хранилище и облако</h2>
-    <mark>TODO: Добавить инструкцию по созданию S3-хранилища и облака</mark>
-    <div class="important">
-        <p>В боевом окружении еще нужно настроить хранилище блокировок, чтобы не было конфликта
-            одновременного изменения состояний.</p>
-    </div>
+    <h3>Команды для cli</h3>
+    <pre><code class="bash" style="font-size: 80%">yc storage bucket create --name terraform-state-ds-2607-5eurjn
+yc iam service-account create --name terraform
+
+ID="$(yc iam service-account get --name terraform --jq .id)"
+GRANT="grantee-id=${ID},grant-type=grant-type-account"
+yc storage bucket update \
+  --grants "${GRANT},permission=permission-read" \
+  --grants "${GRANT},permission=permission-write"
+    </code></pre>
+    <h3>Скрипт</h3>
+    <a
+        href="https://sourcecraft.dev/organization-margosha-mmm/yandex-cloud-sample/browse/terraform/initialize.sh?rev=master">terraform/initialize.sh</a>
+</section>
+
+<section class="slide">
+    <h2>Установка Terraform</h2>
+    <p>Удобнее устанавливать Terraform через <a href="https://github.com/tfutils/tfenv">tfenv</a>.</p>
+    <p>Это позволит избавиться от проблемы синхронизации версии Terraform.</p>
+    <p>Для работы надо выставить переменную окружения:</p>
+    <pre><code class="bash">TFENV_REMOTE=https://hashicorp-releases.yandexcloud.net</code></pre>
 </section>
 
 <section class="slide">
     <h2>Разворачиваем ресурсы из Terraform</h2>
-    <mark>TODO: Добавить ссылку на состояние Terraform</mark>
-    <mark>TODO: Добавить инструкцию по развертыванию ресурсов из Terraform</mark>
-</section>
-
-<section class="slide">
-    <h2>Подготовка Docker Registry</h2>
-    <mark>TODO: Добавить инструкцию по созданию Docker Registry</mark>
-</section>
-
-<section class="slide">
-    <h2>Подготовка Kubernetes-кластера</h2>
-    <mark>TODO: Добавить инструкцию по созданию managed Kubernetes-кластера</mark>
-</section>
-
-<section class="slide">
-    <h2>Настройка CI</h2>
-    <mark>TODO: Добавление воркера для сборки из Github Actions</mark>
+    <h3>Общий алгоритм применения плана</h3>
+    <pre><code>terraform init
+terraform plan --out tfplan
+terraform apply tfplan
+    </code></pre>
+    <h3>Два terraform описания</h3>
+    <ul class="compact">
+        <li>bootstrap</li>
+        <li>stage-1</li>
+    </ul>
 </section>
 
 <section class="slide">
     <h2>Настройка CI</h2>
-    <mark>TODO: Добавление секретов для доступа к Docker Registry и Kubernetes-кластеру на CI</mark>
-</section>
-
-<section class="slide">
-    <h2>Сбор метрик с Pod-ов</h2>
-    <mark>TODO: Добавление сбора метрик с Pod-ов в Yandex Cloud</mark>
+    <p>В Yandex есть сервис <a href="https://sourcecraft.net">sourcecraft.net</a> и на нём есть свой CI.</p>
+    <p>Для того, чтобы выдать права для CI на работу с Yandex Cloud нужно добавить сервисное подключение ("Настройки репозитория" > "Сервисные подключения")</p>
 </section>
