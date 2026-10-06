@@ -19,6 +19,8 @@ title: Очереди сообщений (2027)
         <li>Ниже задержка</li>
         <li>Либо брокер подключается к клиенту, либо постоянное подключение клиента к брокеру</li>
     </ul>
+    <img src="push-model.png" alt="Push: брокер отправляет сообщение потребителю"
+         style="width: 470px; position: absolute; bottom: 45px; right: 50px">
 </section>
 
 <section class="slide">
@@ -30,6 +32,8 @@ title: Очереди сообщений (2027)
         <li>Потребители сами контролируют нагрузку</li>
         <li>Пакетная обработка</li>
     </ul>
+    <img src="pull-model.png" alt="Pull: потребитель отправляет запрос брокеру и получает сообщение в ответ"
+         style="width: 470px; position: absolute; bottom: 45px; right: 50px">
 </section>
 
 <section class="slide">
@@ -53,17 +57,21 @@ title: Очереди сообщений (2027)
 
 <section class="slide">
     <h2>Не больше одного раза (at most once)</h2>
+    <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 24px; align-items: start">
     <ol>
         <li>Взять сообшение из очереди</li>
         <li>Удалить из очереди</li>
         <li>Отправить сообщение</li>
         <li>Забыть про него</li>
     </ol>
+    <img src="at-most-once.png" alt="Сообщение доставлено один раз или потеряно; повторов нет" style="width: 380px; position: absolute; bottom: 50px; right: 50px">
+    </div>
 </section>
 
 <section class="slide">
     <h2>Хотя бы один раз (at least once)</h2>
     <h3>На стороне брокера</h3>
+    <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 24px; align-items: start">
     <ol>
         <li>Взять сообшение из очереди</li>
         <li>Отправить сообщение</li>
@@ -71,17 +79,24 @@ title: Очереди сообщений (2027)
         <li>Удалить сообщение</li>
         <li>Если подтверждения не было, перейти к п. 1</li>
     </ol>
+    <img src="at-least-once-broker.png" alt="Потеря подтверждения приводит к повторной отправке сообщения и возможным дубликатам" style="width: 380px; position: absolute; bottom: 50px; right: 50px">
+    </div>
 </section>
 
 <section class="slide">
     <h2>Хотя бы один раз (at least once)</h2>
     <h3>На стороне клиента</h3>
+    <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 24px; align-items: start">
+    <div>
     <ul>
         <li>Присвоить сообщениям уникальный монотонно возрастающий номер</li>
         <li>Потребитель запрашивает сообщения с пропущенными номерами</li>
     </ul>
     <div class="important">
         <p>Потребитель должен быть ровно один.</p>
+    </div>
+    </div>
+    <img src="at-least-once-client.png" alt="Потребитель замечает пропуск номера 42 между 41 и 43 и запрашивает сообщение у брокера" style="width: 380px; position: absolute; bottom: 50px; right: 50px">
     </div>
 </section>
 
@@ -157,6 +172,8 @@ title: Очереди сообщений (2027)
                 <li>Закрыть кошелёк</li>
             </ol>
         </div>
+        <img src="idempotency-money.png" alt="Передача купюры в 500 рублей рядом с открытым кошельком"
+             style="width: 400px; position: absolute; bottom: 50px; right: 50px">
 </section>
 
 <section class="slide">
