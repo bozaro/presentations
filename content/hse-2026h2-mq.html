@@ -177,6 +177,48 @@ title: Очереди сообщений (2026h2)
 </section>
 
 <section class="slide">
+    <h2>Сравнение гарантий</h2>
+    <table class="classic bordered" style="font-size: 75%; table-layout: fixed">
+        <colgroup>
+            <col style="width: 16%">
+            <col style="width: 16%">
+            <col style="width: 19%">
+            <col style="width: 51%">
+        </colgroup>
+        <thead>
+            <tr>
+                <th scope="col">Гарантия</th>
+                <th scope="col">Потери</th>
+                <th scope="col">Дубликаты</th>
+                <th scope="col">Обязанности потребителя</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th scope="row">At most once</th>
+                <td>Возможны</td>
+                <td>Нет повторной доставки</td>
+                <td>Допускать пропуски или восстанавливать данные из другого источника.</td>
+            </tr>
+            <tr>
+                <th scope="row">At least once</th>
+                <td>Нет*</td>
+                <td>Возможны</td>
+                <td>Подтверждать после успешной обработки. Обеспечивать идемпотентность или дедупликацию.</td>
+            </tr>
+            <tr>
+                <th scope="row">Exactly once</th>
+                <td>Нет*</td>
+                <td>Нет повторного эффекта в пределах гарантии</td>
+                <td>Атомарно фиксировать результат и факт обработки. Отдельно защищать внешние эффекты.</td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="note" style="font-size: 75%">* При сохранности сообщения и восстановлении доступности. Exactly once
+        относится к результату обработки в оговорённых границах системы; попытки доставки могут повторяться.</p>
+</section>
+
+<section class="slide">
     <h2 class="shout">Топологии очередей</h2>
 </section>
 
