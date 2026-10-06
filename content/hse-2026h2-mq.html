@@ -574,6 +574,15 @@ title: Очереди сообщений (2026h2)
 
 <section class="slide">
     <h2>Transactional outbox</h2>
+    <h3>Проблема</h3>
+    <p>Между изменением данных в БД и отправкой события в брокер сервис может упасть — данные изменены, событие
+        потеряно.</p>
+    <h3>Главная идея</h3>
+    <p>Изменить бизнес-данные и записать событие в таблицу outbox в одной транзакции той же БД.</p>
+</section>
+
+<section class="slide">
+    <h2>Transactional outbox</h2>
     <img src="tr-out-1.png" style="width: 300px; float: right">
     <ol>
         <li>Получили сообщение</li>
