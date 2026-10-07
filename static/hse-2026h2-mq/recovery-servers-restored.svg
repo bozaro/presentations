@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="824" height="310" viewBox="0 0 824 310" role="img">
+<title>Игровые серверы, общий биллинг и банк: состояние восстановления</title>
+<style>text{font-family:Arial,sans-serif;fill:#303846}.label{font-size:21px;font-weight:700}.state{font-size:20px}.small{font-size:17px}</style>
+<path d="M 230 57 H 280 V 133 H 340" fill="none" stroke="#24856b" stroke-width="3"/>
+<text x="271" y="47" text-anchor="middle" class="label" style="fill:#24856b">=</text>
+<path d="M 230 149 H 280 V 156 H 340" fill="none" stroke="#24856b" stroke-width="3"/>
+<text x="271" y="139" text-anchor="middle" class="label" style="fill:#24856b">=</text>
+<path d="M 230 241 H 280 V 179 H 340" fill="none" stroke="#24856b" stroke-width="3"/>
+<text x="271" y="231" text-anchor="middle" class="label" style="fill:#24856b">=</text>
+<path d="M 560 156 H 666" fill="none" stroke="#c34545" stroke-width="3" stroke-dasharray="7 5"/>
+<text x="613" y="144" text-anchor="middle" class="label" style="fill:#c34545">≠</text>
+<rect x="10" y="20" width="220" height="74" rx="9" fill="#f3f6fa" stroke="#adb7c4" stroke-width="1.5"/>
+<text x="120.0" y="49" text-anchor="middle" class="label">Игровой сервер 1</text>
+<text x="120.0" y="77" text-anchor="middle" class="state">БД: t0</text>
+<rect x="10" y="112" width="220" height="74" rx="9" fill="#f3f6fa" stroke="#2866a0" stroke-width="3"/>
+<text x="120.0" y="141" text-anchor="middle" class="label">Игровой сервер 2</text>
+<text x="120.0" y="169" text-anchor="middle" class="state">БД: t0</text>
+<rect x="10" y="204" width="220" height="74" rx="9" fill="#f3f6fa" stroke="#2866a0" stroke-width="3"/>
+<text x="120.0" y="233" text-anchor="middle" class="label">Игровой сервер 3</text>
+<text x="120.0" y="261" text-anchor="middle" class="state">БД: t0</text>
+<rect x="340" y="106" width="220" height="100" rx="9" fill="#f3f6fa" stroke="#adb7c4" stroke-width="1.5"/>
+<text x="450.0" y="135" text-anchor="middle" class="label">Общий биллинг</text>
+<text x="450.0" y="163" text-anchor="middle" class="state">БД: t0</text>
+<text x="450" y="191" text-anchor="middle" class="small">для всех серверов</text>
+<rect x="666" y="112" width="150" height="88" rx="9" fill="#f3f6fa" stroke="#adb7c4" stroke-width="1.5"/>
+<text x="741.0" y="141" text-anchor="middle" class="label">Банк</text>
+<text x="741.0" y="169" text-anchor="middle" class="state">Данные: t1</text>
+<text x="410" y="302" text-anchor="middle" class="small">t0 — резервная копия до покупок; t1 — состояние после покупок</text>
+</svg>
