@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="824" height="170" viewBox="0 0 824 170" role="img">
+  <title>Публикация и обработка события покупки</title>
+  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#2866a0" stroke-width="1.5"/></marker></defs>
+  <style>text{font-family:Arial,sans-serif;fill:#303846;font-size:18px;text-anchor:middle}.title{font-size:21px;font-weight:700}</style>
+  <path d="M230 83 H298" fill="none" stroke="#2866a0" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M518 83 H586" fill="none" stroke="#2866a0" stroke-width="3" marker-end="url(#arrow)"/>
+  <rect x="4" y="22" width="226" height="118" rx="9" fill="#f3f6fa" stroke="#adb7c4" stroke-width="1.5"/>
+  <text x="117" y="52" class="title">Биллинг</text>
+  <text x="117" y="80">Покупка + outbox</text>
+  <text x="117" y="112">Одна транзакция БД</text>
+  <rect x="300" y="22" width="218" height="118" rx="9" fill="#f3f6fa" stroke="#2866a0" stroke-width="2"/>
+  <text x="409" y="52" class="title">Журнал событий</text>
+  <text x="409" y="80">purchase_id: 42</text>
+  <text x="409" y="112">История сохраняется</text>
+  <rect x="588" y="22" width="232" height="118" rx="9" fill="#f3f6fa" stroke="#adb7c4" stroke-width="1.5"/>
+  <text x="704" y="52" class="title">Игровой сервер</text>
+  <text x="704" y="80">Выдать покупку №42</text>
+  <text x="704" y="112">Повтор безопасен</text>
+</svg>
