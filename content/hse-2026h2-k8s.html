@@ -233,7 +233,7 @@ nginx   1/1     Running   0          28m
         <li>Pod &mdash; один или несколько контейнеров, совместно запускаемых на одной ноде.</li>
         <li>Общая сеть: у Pod-а один IP, контейнеры видят друг друга через <code>localhost</code>.</li>
         <li>Общие тома: том описывается на уровне Pod-а и монтируется в контейнеры.</li>
-        <li>Пространства имён удерживает сервисный контейнер <code>pause</code>.</li>
+        <li>Общие пространства имён Linux (сеть, hostname) удерживает сервисный контейнер <code>pause</code>.</li>
     </ul>
     <footer>https://kubernetes.io/docs/concepts/workloads/pods/</footer>
 </section>
@@ -279,7 +279,6 @@ spec:
     <ul class="compact">
         <li>Публичные реестры: Docker Hub, ghcr.io, registry.k8s.io.</li>
         <li>Приватные: Yandex Container Registry, Harbor, реестр GitLab; доступ &mdash; через <code>imagePullSecrets</code>.</li>
-        <li>В minikube локальный образ можно занести в ноду без реестра: <code>minikube image load my-app:1.0</code>.</li>
     </ul>
     <pre><code class="bash">docker build --tag my-app:1.0 .
 docker tag my-app:1.0 registry.example.com/my-app:1.0
@@ -442,15 +441,17 @@ spec:
 kind: Pod
 metadata:
   name: pod-resources-demo
-  namespace: pod-resources-example
 spec:
-  resources:
-    limits:
-      cpu: "1"
-      memory: "200Mi"
-    requests:
-      cpu: "1"
-      memory: "100Mi"</code></pre>
+  containers:
+  - name: app
+    image: my-app:1.0
+    resources:
+      limits:
+        cpu: "1"
+        memory: "200Mi"
+      requests:
+        cpu: "1"
+        memory: "100Mi"</code></pre>
 </section>
 
 <section class="slide">
@@ -529,7 +530,7 @@ kind: PodDisruptionBudget
 metadata:
   name: nginx
 spec:
-  minAvailable: 2
+  maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: nginx</code></pre>
@@ -791,6 +792,17 @@ minikube addons enable ingress-dns
     <pre><code class="bash" style="font-size: 75%">minikube dashboard
 curl http://hello-john.test
 </code></pre>
+</section>
+
+<section class="slide">
+    <h2>Свои образы в minikube</h2>
+    <p>Нода minikube &mdash; не твоя машина: собранный локально образ надо занести в ноду.</p>
+    <pre><code class="bash" style="font-size: 80%">docker build --tag my-app:1.0 .
+minikube image load my-app:1.0</code></pre>
+    <ul class="compact">
+        <li>Указывай в Pod-е точный тег: для <code>latest</code> политика <code>Always</code>, и нода пойдёт за образом в registry, где его нет.</li>
+    </ul>
+    <footer>https://minikube.sigs.k8s.io/docs/handbook/pushing/</footer>
 </section>
 
 <section class="slide">
