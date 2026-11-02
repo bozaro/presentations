@@ -263,6 +263,30 @@ spec:
 </section>
 
 <section class="slide">
+    <h2>Кто в ноде запускает контейнеры?</h2>
+    <ul>
+        <li>Pod-ы запускает <code>kubelet</code> на ноде &mdash; через CRI (Container Runtime Interface) он обращается к контейнерному runtime.</li>
+        <li>Runtime качает образы и создаёт контейнеры: <b>containerd</b> или <b>CRI-O</b>; низкоуровневый запуск делает <code>runc</code> по OCI-спецификации.</li>
+        <li>Docker внутри Kubernetes больше не используется: dockershim удалён из Kubernetes 1.24 (2022).</li>
+        <li>Образы, собранные <code>docker build</code>, продолжают работать &mdash; стандарт OCI-образа общий.</li>
+    </ul>
+    <footer>https://kubernetes.io/docs/setup/production-environment/container-runtimes/</footer>
+</section>
+
+<section class="slide">
+    <h2>Откуда берётся образ?</h2>
+    <p><code>image: nginx:1.14.2</code> &rArr; <code>docker.io/library/nginx:1.14.2</code>: runtime скачивает его из container registry.</p>
+    <ul class="compact">
+        <li>Публичные реестры: Docker Hub, ghcr.io, registry.k8s.io.</li>
+        <li>Приватные: Yandex Container Registry, Harbor, реестр GitLab; доступ &mdash; через <code>imagePullSecrets</code>.</li>
+        <li>В minikube локальный образ можно занести в ноду без реестра: <code>minikube image load my-app:1.0</code>.</li>
+    </ul>
+    <pre><code class="bash">docker build --tag my-app:1.0 .
+docker tag my-app:1.0 registry.example.com/my-app:1.0
+docker push registry.example.com/my-app:1.0</code></pre>
+</section>
+
+<section class="slide">
     <h2>Ресурсы в Kubernetes</h2>
     <h3>Запуск приложения</h3>
     <dl>
@@ -669,6 +693,9 @@ curl http://hello-john.test
         <dt>Headlamp (<a
                 href="https://github.com/kubernetes-sigs/headlamp">https://github.com/kubernetes-sigs/headlamp</a>)</dt>
         <dd>Универсальный и расширяемый пользовательский интерфейс к Kubernetes.</dd>
+
+        <dt>k9s (<a href="https://github.com/derailed/k9s">https://github.com/derailed/k9s</a>)</dt>
+        <dd>Terminal UI: кластер, ресурсы и логи в одном окне прямо из консоли.</dd>
     </dl>
 </section>
 
