@@ -454,6 +454,125 @@ spec:
 </section>
 
 <section class="slide">
+    <h2>Выбор ноды: nodeAffinity</h2>
+    <ul>
+        <li>Ноды помечаются <code>labels</code>-ами, а Pod просит подходящую ноду.</li>
+        <li>Самый простой способ &mdash; <code>nodeSelector</code>: точное равенство метки.</li>
+        <li><code>nodeAffinity</code> &mdash; выражения (<code>In</code>, <code>NotIn</code>, <code>Exists</code>) и два уровня строгости: <code>required...</code> и <code>preferred...</code>.</li>
+        <li>Так же отделяют и сами Pod-ы: <code>podAntiAffinity</code>.</li>
+    </ul>
+    <footer>https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/</footer>
+</section>
+
+<section class="slide">
+    <h2>nodeAffinity: пример</h2>
+    <h3>required &mdash; иначе Pod не запланируется</h3>
+    <pre><code class="yaml" style="font-size: 80%">requiredDuringSchedulingIgnoredDuringExecution:
+  nodeSelectorTerms:
+  - matchExpressions:
+    - key: gpu
+      operator: In
+      values: ["a100"]</code></pre>
+    <div class="next">
+        <h3>preferred &mdash; мягкое пожелание с весом</h3>
+        <pre><code class="yaml" style="font-size: 80%">preferredDuringSchedulingIgnoredDuringExecution:
+- weight: 1
+  preference:
+    matchExpressions:
+    - key: zone
+      operator: In
+      values: ["zone-a"]</code></pre>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>Разнос Pod-ов по зонам</h2>
+    <ul>
+        <li>Защита от «вся копия приложения в одной зоне отказа».</li>
+        <li><code>topologyKey</code> &mdash; label ноды, задающий домен: <code>topology.kubernetes.io/zone</code> или <code>kubernetes.io/hostname</code>.</li>
+        <li><code>maxSkew</code> &mdash; допустимая разница Pod-ов между самой полной и самой пустой зоной.</li>
+        <li><code>DoNotSchedule</code> &mdash; жёстко, <code>ScheduleAnyway</code> &mdash; мягко.</li>
+    </ul>
+    <footer>https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/</footer>
+</section>
+
+<section class="slide">
+    <h2>topologySpreadConstraints: пример</h2>
+    <pre><code class="yaml" style="font-size: 80%">spec:
+  replicas: 6
+  template:
+    spec:
+      topologySpreadConstraints:
+      - topologyKey: topology.kubernetes.io/zone
+        maxSkew: 1
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: nginx</code></pre>
+</section>
+
+<section class="slide">
+    <h2>PodDisruptionBudget</h2>
+    <ul>
+        <li>Страховка на время обслуживания кластера: <code>kubectl drain</code> не уронит реплики ниже лимита.</li>
+        <li><code>minAvailable</code> или <code>maxUnavailable</code> &mdash; число или процент.</li>
+        <li>От невольных потерь (сбой ноды, eviction из-за нехватки ресурсов) не защищает.</li>
+        <li>Однорепличному приложению ставят <code>minAvailable: 0</code>, иначе drain ноды зависнет.</li>
+    </ul>
+    <footer>https://kubernetes.io/docs/concepts/workloads/pods/disruptions/</footer>
+</section>
+
+<section class="slide">
+    <h2>PodDisruptionBudget: пример</h2>
+    <pre><code class="yaml" style="font-size: 80%">apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nginx
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx</code></pre>
+    <div class="next">
+        <h3>Обслуживание ноды &mdash; автоматика учтёт бюджет</h3>
+        <pre><code class="bash" style="font-size: 80%">kubectl drain node-1 --ignore-daemonsets --delete-emptydir-data</code></pre>
+    </div>
+</section>
+
+<section class="slide">
+    <h2>HorizontalPodAutoscaler</h2>
+    <ul>
+        <li>Сам меняет число реплик Deployment/StatefulSet под нагрузкой.</li>
+        <li>Нужен metrics-server; процент считается от <code>requests</code> &mdash; поэтому их надо указывать.</li>
+        <li>Кроме ресурсов &mdash; custom и внешние метрики (например, глубина очереди через KEDA).</li>
+        <li>Окна стабилизации и скорость изменения настраивает <code>behavior</code>.</li>
+    </ul>
+    <footer>https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/</footer>
+</section>
+
+<section class="slide">
+    <h2>HorizontalPodAutoscaler: пример</h2>
+    <pre><code class="yaml" style="font-size: 75%">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginx
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nginx
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70</code></pre>
+</section>
+
+<section class="slide">
     <h2>Контроль жизненного цикла</h2>
     <p>Для определения состояния Pod-а есть следующие <a
             href="https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/">"пробы"</a>:</p>
@@ -646,11 +765,9 @@ spec:
 <section class="slide">
     <h2>Что осталось за кадром?</h2>
     <ul>
-        <li>Pod nodeAffinity</li>
-        <li>Pod topologySpreadConstraints</li>
-        <li>HorizontalPodAutoscaler</li>
-        <li>PodDisruptionBudget</li>
-        <li>Состояние в Kubernetes: StatefulSet, Persistent Volume.</li>
+        <li>Состояние в Kubernetes: StatefulSet, Persistent Volume</li>
+        <li>VPA &mdash; вертикальное автомасштабирование (автоматическая подстройка requests)</li>
+        <li>NetworkPolicy и RBAC &mdash; сетевая изоляция и разграничение доступа</li>
     </ul>
 </section>
 
