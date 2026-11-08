@@ -696,6 +696,59 @@ kubectl port-forward pods/nginx 5000:80
 </section>
 
 <section class="slide">
+    <h2>Требования Kubernetes к приложению</h2>
+    <p>Оркестратор не спрашивает разрешения: Pod-ы перезапускаются, переезжают и удаляются в любой
+        момент &mdash; rolling update, HPA, <code>kubectl drain</code>, eviction, OOMKill,
+        не прошедший <code>livenessProbe</code> контейнер.</p>
+    <ul class="compact">
+        <li><b>Быстрый старт.</b> Готовность за секунды: тяжёлые миграции и прогрев &mdash; в отдельный
+            <b>Job</b>, медленный старт прикрывает <code>startupProbe</code>.</li>
+        <li><b>Умение завершиться в любой момент.</b> Реагировать на <code>SIGTERM</code>, договорить
+            начатые запросы, не хранить состояние внутри Pod-а.</li>
+        <li><b>Перечитывание секретов из файла.</b> kubelet молча обновляет файлы в volume; значения
+            из <code>env</code> не обновляются никогда. Либо перечитываем, либо делаем
+            <code>kubectl rollout restart</code>.</li>
+        <li><b>Один процесс на контейнер.</b> Тут нет systemd: процессу достаётся PID 1 и все сигналы,
+            поэтому он не должен превращаться в демона (<code>daemon off;</code>).</li>
+        <li><b>Занимать ровно свой контейнер.</b> Пулы потоков, кэши и <code>GOMAXPROCS</code> считать от
+            <code>requests</code>/<code>limits</code>, а не от ресурсов ноды &mdash; иначе throttling
+            и OOMKill.</li>
+    </ul>
+    <footer>https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/</footer>
+</section>
+
+<section class="slide">
+    <h2>Как правильно завершаться</h2>
+    <div class="next">
+        <h3>Что делает kubelet</h3>
+        <pre><code class="bash"># 1) SIGTERM процессу, 2) ждёт terminationGracePeriodSeconds, 3) SIGKILL
+# preStop-хук выполняется ДО SIGTERM</code></pre>
+        <pre><code class="yaml" style="font-size: 75%">spec:
+  terminationGracePeriodSeconds: 30
+  containers:
+  - name: app
+    image: my-app:1.0
+    lifecycle:
+      preStop:
+        exec:
+          command: ["/bin/sh", "-c", "sleep 5"]</code></pre>
+    </div>
+    <div class="next">
+        <ul class="compact">
+            <li><code>sleep</code> в <code>preStop</code> нужен, чтобы Pod-ы успели исчезнуть из
+                Endpoint-ов Service &mdash; иначе на rolling update ловим 502.</li>
+            <li>Обёртка <code>CMD start.sh</code> в Dockerfile перехватывает сигналы: PID 1 обязан
+                пробрасывать их дальше (exec-form, <code>sh -c "exec ..."</code>, <code>tini</code>).</li>
+            <li>По <code>SIGTERM</code>: перестать принимать соединения, доработать начатые,
+                закрыть брокеры и пулы. <code>SIGKILL</code> догнать нельзя.</li>
+            <li>Граньтайм не спасает при OOMKill и сгоревшей ноде &mdash; состояние держим
+                вне Pod-а, идемпотентность восстановления обязательна.</li>
+        </ul>
+    </div>
+    <footer>https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/</footer>
+</section>
+
+<section class="slide">
     <h2>Доступ к Pod-у снаружи Kubernetes-кластера</h2>
     <h3>Объединяем Pod-ы в Service</h3>
     {{< code file="hse-2026h2-k8s/service.yaml" language="yaml" style="font-size: 75%">}}
