@@ -5,7 +5,7 @@ HUGO_VER=0.119.0
 BUILD_DIR=.build/hugo_${HUGO_VER}_linux_amd64
 HUGO_BIN=${BUILD_DIR}/hugo
 # архив, положенный в репозиторий через git-lfs (основной источник - CI может быть без выхода в интернет)
-LFS_TGZ=.jenkins/distrib/hugo_${HUGO_VER}_Linux-64bit.tar.gz
+LFS_TGZ=.ci/distrib/hugo_${HUGO_VER}_Linux-64bit.tar.gz
 
 # первые два байта gzip-а; текстовый указатель git-lfs ими не начинается
 is_gzip() {

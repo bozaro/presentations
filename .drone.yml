@@ -3,7 +3,7 @@ type: docker
 name: default
 
 # Образ CI (Alpine: git, git-lfs, curl, rsync, zip, py3-ghp-import) собирается
-# вручную из .jenkins/Dockerfile и лежит в docker.bozaro.ru.
+# вручную из .ci/Dockerfile и лежит в docker.bozaro.ru.
 #
 # Раньше его перестраивал шаг `docker` (image: plugins/docker) на каждом пуше.
 # Runner не может сходить на Docker Hub:
@@ -12,7 +12,7 @@ name: default
 # хотя шаги сборки живут только в приватном registry.
 #
 # Пересобрать и выложить образ (оттуда, где Docker Hub доступен):
-#   docker build -t docker.bozaro.ru/ci/bozaro/presentations .jenkins
+#   docker build -t docker.bozaro.ru/ci/bozaro/presentations .ci
 #   docker push  docker.bozaro.ru/ci/bozaro/presentations
 
 steps:
