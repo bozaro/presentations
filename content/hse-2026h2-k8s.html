@@ -400,6 +400,45 @@ kubectl rollout history deployment/nginx</code></pre>
 </section>
 
 <section class="slide">
+    <h2>Rollout restart</h2>
+    <p><code>rollout restart</code> меняет аннотацию <code>kubectl.kubernetes.io/restartedAt</code>
+        в Pod template &mdash; Deployment делает rolling update без смены образа.</p>
+    <pre><code class="bash" style="font-size: 80%">kubectl rollout restart deployment/nginx
+kubectl rollout history deployment/nginx</code></pre>
+    <ul class="compact">
+        <li>Зачем: Pod-ы не перезапускаются сами при изменении <code>ConfigMap</code> / <code>Secret</code>.</li>
+        <li>Зачем: пересоздать зависшие Pod-ы, не меняя манифест.</li>
+        <li>Свойства те же, что у rolling update: <code>maxSurge</code>, <code>maxUnavailable</code>, <code>readinessProbe</code>.</li>
+        <li>Есть у <code>deployment</code>, <code>daemonset</code>, <code>statefulset</code>.</li>
+    </ul>
+    <footer>https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/kubectl_rollout_restart/</footer>
+</section>
+
+<section class="slide">
+    <h2>Rollback Deployment</h2>
+    <p>Каждая ревизия &mdash; это <code>ReplicaSet</code>, который Deployment сохранил (по умолчанию 10 последних).</p>
+    <div class="next">
+        <h3>Смотрим историю и катимся назад</h3>
+        <pre><code class="bash" style="font-size: 80%">kubectl rollout history deployment/nginx
+kubectl rollout history deployment/nginx --revision=3
+kubectl rollout undo deployment/nginx --to-revision=3</code></pre>
+    </div>
+    <div class="next">
+        <h3>Если выкатка застряла</h3>
+        <pre><code class="bash" style="font-size: 80%">kubectl rollout status deployment/nginx   # ждём завершения, есть --timeout
+kubectl rollout undo deployment/nginx      # откат к предыдущей ревизии</code></pre>
+    </div>
+    <div class="next">
+        <ul class="compact">
+            <li><code>undo</code> &mdash; тоже rolling update: новые Pod-ы проходят readiness.</li>
+            <li>Нельзя откатиться на ревизию, удалённую вместе с <code>ReplicaSet</code>.</li>
+            <li><code>spec.revisionHistoryLimit</code> &mdash; сколько ревизий хранить.</li>
+        </ul>
+    </div>
+    <footer>https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rollback</footer>
+</section>
+
+<section class="slide">
     <h2>Jobs &mdash; пакетные задачи</h2>
     <p><b>Job</b> доводит задачу до успешного завершения: миграция, отчёт, очистка данных.<br />
         <b>CronJob</b> создаёт Job по cron-расписанию.</p>
