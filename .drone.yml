@@ -2,24 +2,38 @@ kind: pipeline
 type: docker
 name: default
 
+# Образ CI (Alpine: git, git-lfs, curl, rsync, zip, py3-ghp-import) собирается
+# вручную из .ci/Dockerfile и лежит в docker.bozaro.ru.
+#
+# Раньше его перестраивал шаг `docker` (image: plugins/docker) на каждом пуше.
+# Runner не может сходить на Docker Hub:
+#   Error response from daemon: Get "https://registry-1.docker.io/v2/": net/http: TLS handshake timeout
+# и из-за этого падал ВЕСЬ pipeline (status: error, логов шагов нет вообще),
+# хотя шаги сборки живут только в приватном registry.
+#
+# Пересобрать и выложить образ (оттуда, где Docker Hub доступен):
+#   docker build -t docker.bozaro.ru/ci/bozaro/presentations .ci
+#   docker push  docker.bozaro.ru/ci/bozaro/presentations
+
 steps:
-  - name: docker
-    image: plugins/docker
-    settings:
-      context: .jenkins
-      repo: docker.bozaro.ru/ci/${DRONE_REPO}
-      cache_from: docker.bozaro.ru/ci/${DRONE_REPO}
-      dockerfile: .jenkins/Dockerfile
-      registry: docker.bozaro.ru
-      username:
-        from_secret: docker_username
-      password:
-        from_secret: docker_password
+  # hugo и прочие бинарники лежат в git-lfs, а static/mathjax - подмодуль.
+  # Без этого шага: `tar -xzvf` падает на текстовом указателе LFS, а
+  # опубликованные db-лекции остаются без /mathjax/MathJax.js.
+  - name: prepare
+    image: docker.bozaro.ru/ci/${DRONE_REPO}
+    commands:
+      - git lfs install --local
+      - git lfs pull
+      - git submodule sync --recursive
+      # depth=1: MathJax - это ~180MB рабочих файлов, история подмодуля в сборке не нужна
+      - git submodule update --init --recursive --depth 1 --single-branch
+
   - name: build
     image: docker.bozaro.ru/ci/${DRONE_REPO}
     commands:
       - ./hugo.sh --minify
       - ghp-import -n public
+
   - name: publish
     image: docker.bozaro.ru/ci/${DRONE_REPO}
     commands:
