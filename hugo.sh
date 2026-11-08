@@ -43,4 +43,14 @@ fi
 "$HUGO_BIN" "$@"
 if [ -d public ]; then
     find public -iname .git -delete
+
+    # self-hosted MathJax: в публикацию не идёт ничего лишнего
+    #   unpacked/ (22M, 1218 файлов) - исходники для отладки, packed MathJax.js их не грузит
+    #   test/     (108K, 20 файлов)  - тесты MathJax
+    #   fonts/**/png (116M, 29012 файлов) - bitmap-фоллбэк для браузеров без @font-face;
+    #       woff/otf/eot/svg остаются, на современных браузерах рендер не зависит от png
+    if [ -d public/mathjax ]; then
+        rm -rf public/mathjax/unpacked public/mathjax/test
+        find public/mathjax/fonts -type d -name png -prune -exec rm -rf {} \;
+    fi
 fi
